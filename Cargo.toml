@@ -1,0 +1,8 @@
+[package]
+name = "foobar2000"
+version = "0.1.0"
+authors = ["Matthew Waters <matthew@centricular.com>"]
+
+[dependencies.nom]
+version = "4.0"
+features = ["verbose-errors"]
