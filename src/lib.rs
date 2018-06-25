@@ -1,5 +1,8 @@
 #[macro_use]
 extern crate nom;
 
-mod types;
+pub mod types;
 mod parser;
+mod functions;
+pub mod environment;
+pub mod program;

@@ -5,4 +5,4 @@ authors = ["Matthew Waters <matthew@centricular.com>"]
 
 [dependencies.nom]
 version = "4.0"
-features = ["verbose-errors"]
+#features = ["verbose-errors"]
