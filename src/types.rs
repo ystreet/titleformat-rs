@@ -5,7 +5,7 @@ pub type Result = result::Result<Expr, Error>;
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
-//    InvalidNativeFunctionArgs(String, usize),
+    InvalidNativeFunctionArgs(String, usize),
     UndefinedFunction(String),
     ParseError,
 }
@@ -15,14 +15,14 @@ use types::Error::*;
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-/*            InvalidNativeFunctionArgs(ref native_fn_name, ref actual) => {
+            InvalidNativeFunctionArgs(ref native_fn_name, ref actual) => {
                 write!(
                     f,
                     "Syntax Error: Native function '{}' called with the wrong number of arguments {}",
                     native_fn_name,
                     actual
                 )
-            }*/
+            }
             UndefinedFunction(ref varname) => write!(f, "Undefined Function: {}", varname),
             ParseError => write!(f, "Unable the parse the input. Please recheck."),
         }

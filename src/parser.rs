@@ -1,8 +1,8 @@
 use std::str;
 
-use nom::{alphanumeric, non_empty};
+use nom::alphanumeric;
 use nom::types::CompleteStr;
-use nom::{IResult, ErrorKind};
+use nom::ErrorKind;
 
 use types::Expr;
 use types::Expr::*;

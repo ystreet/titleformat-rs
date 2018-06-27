@@ -7,7 +7,7 @@ use functions;
 #[derive(Debug, Clone)]
 pub enum FuncValue {
   NativeFn(fn(Vec<String>) -> String),
-//  NativeFnError(fn(Vec<String>) -> Result<String, types::Error>),
+  NativeFnError(fn(Vec<String>) -> Result<String, Error>),
 }
 
 /* everything is a string... */
@@ -20,7 +20,12 @@ pub struct Environment {
 
 impl Environment {
   fn add_default_functions (&mut self) -> () {
-    self.funcs.insert(String::from("add"), FuncValue::NativeFn(functions::add));
+    self.funcs.insert(String::from("add"), FuncValue::NativeFnError(functions::add));
+    self.funcs.insert(String::from("sub"), FuncValue::NativeFnError(functions::sub));
+    self.funcs.insert(String::from("div"), FuncValue::NativeFnError(functions::div));
+    self.funcs.insert(String::from("mul"), FuncValue::NativeFnError(functions::mul));
+    self.funcs.insert(String::from("max"), FuncValue::NativeFnError(functions::max));
+    self.funcs.insert(String::from("min"), FuncValue::NativeFnError(functions::min));
   }
 
   pub fn new() -> Self {
@@ -49,6 +54,7 @@ impl Environment {
     match self.funcs.get(name) {
       Some(func_val) => match func_val {
         FuncValue::NativeFn(func) => Ok(func(args)),
+        FuncValue::NativeFnError(func) => Ok(func(args)?),
       },
       None => Err(Error::UndefinedFunction(String::from(name))),
     }
