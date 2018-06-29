@@ -1,6 +1,5 @@
 use std::str;
 
-use nom::alphanumeric;
 use nom::types::CompleteStr;
 use nom::ErrorKind;
 
@@ -9,22 +8,20 @@ use types::Expr::*;
 use types::Error;
 use types::Error::*;
 
-named!(varname<CompleteStr, CompleteStr>, ws!(alphanumeric));
-
 /* based on https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Title_Formatting_Reference */
-/* TODO: comments, newlines, escaping and conditionals, expand literal */
+/* TODO: conditionals */
 
 /* comment
  *
  * A comment is a line starting with two slashes, e.g. // this is a comment. */
-named!(comment<CompleteStr, Expr>,
+named!(comment<CompleteStr, String>,
     do_parse!(
         alt!(
             delimited!(tag!("//"), take_until!("\n"), tag!("\n"))
           | delimited!(tag!("//"), take_until!("\r\n"), tag!("\r\n"))
           | preceded!(tag!("//"), take_till!(|_| { false }))
         ) >> 
-        (Nil)
+        (String::from(""))
     )
 );
 
@@ -37,7 +34,7 @@ named!(variable<CompleteStr, Expr>,
         tag!("%"),
         return_error!(ErrorKind::Custom(1),
             do_parse!(
-                var_name : literal >>
+                var_name : take_until1!("%") >>
                 (parse_varname(&var_name))
             )
         ),
@@ -59,8 +56,8 @@ named!(func<CompleteStr, Expr>,
     preceded!(tag!("$"),
         return_error!(ErrorKind::Custom(2),
             do_parse!(
-                func_name: varname >>
-                args : ws!(delimited!(char!('('), separated_list!(char!(','), nested_expr), char!(')'))) >>
+                func_name: take_until1!("(") >>
+                args : ws!(delimited!(char!('('), separated_list!(char!(','), function_expr), char!(')'))) >>
                 (parse_funccall(&func_name, args))
             )
         )
@@ -84,73 +81,84 @@ fn is_special(c : char) -> bool {
   }
 }
 
-named!(literal<CompleteStr, CompleteStr>,
-    alt!(
-        take_till1!(is_special)
-      | map!(tag!("\'%\'"), |_| CompleteStr("%"))
-      | map!(tag!("\'$\'"), |_| CompleteStr("$"))
-      | map!(tag!("\'[\'"), |_| CompleteStr("["))
-      | map!(tag!("\']\'"), |_| CompleteStr("]"))
-      | map!(tag!("\'\'"),  |_| CompleteStr("\'"))
-      | map!(tag!("/"),     |_| CompleteStr("/"))
-      | map!(tag!("\n"),    |_| CompleteStr(""))
-      | map!(tag!("\r\n"),  |_| CompleteStr(""))
-));
-named!(literal_expr<CompleteStr, Expr>,
+named!(unescaped_literal<CompleteStr, String>,
+    map!(take_till1!(is_special), |a| String::from(&a as &str))
+);
+
+named!(escaped_literal<CompleteStr, String>,
     do_parse!(
-        lit : literal >>
+        tag!("\'") >>
+        ret : take_until1!("\'") >>
+        tag!("\'") >>
+        (String::from(&ret as &str))
+    )
+);
+
+/* literal that can be detected anywhere */
+named!(base_literal<CompleteStr, String>,
+    do_parse!(
+        opt!(comment) >>
+        ret : alt!(
+            unescaped_literal
+          | escaped_literal
+            /* [, ], <, > currently unused */
+          | map!(tag!("["),  |_| String::from("["))
+          | map!(tag!("]"),  |_| String::from("]"))
+          | map!(tag!("<"),  |_| String::from("<"))
+          | map!(tag!(">"),  |_| String::from(">"))
+          | map!(tag!("\'\'"),  |_| String::from("\'"))
+          | map!(tag!("/"),     |_| String::from("/"))
+          | map!(tag!("\n"),    |_| String::from(""))
+          | map!(tag!("\r\n"),  |_| String::from(""))) >>
+        opt!(comment) >>
+        (ret)
+    )
+);
+
+named!(function_literal<CompleteStr, String>,
+    alt!(
+        base_literal
+      | map!(tag!("("), |_| String::from("("))
+    )
+);
+named!(function_literal_expr<CompleteStr, Expr>,
+    do_parse!(
+        lit : fold_many1!(function_literal,
+            String::new(), |mut acc : String, item : String| {
+                acc.push_str(&item);
+                acc
+            }) >>
+        (parse_literal(&lit))
+    )
+);
+named!(function_expr<CompleteStr, Expr>, alt!(func | variable | function_literal_expr));
+
+/* literals outside functions, variables and conditionas */
+named!(standard_literal<CompleteStr, String>,
+    alt!(
+        base_literal
+      | map!(tag!("("),  |_| String::from("("))
+      | map!(tag!(")"),  |_| String::from(")"))
+      | map!(tag!(","),  |_| String::from(","))
+    )
+);
+named!(standard_literal_expr<CompleteStr, Expr>,
+    do_parse!(
+        lit : fold_many1!(standard_literal,
+            String::new(), |mut acc : String, item : String| {
+                acc.push_str(&item);
+                acc
+            }) >>
         (parse_literal(&lit))
     )
 );
 
-named!(nested_expr<CompleteStr, Expr>, alt!(comment | func | variable | literal_expr));
+named!(nested_expr<CompleteStr, Expr>, alt!(func | variable | standard_literal_expr));
 named!(expr<CompleteStr, Vec<Expr>>, many0!(nested_expr));
-
-fn simplify (input : Vec<Expr>) -> Vec<Expr> {
-    /* remove Nil's, empty literal's and consecutive literals */
-    let mut iter = input.iter().peekable();
-    let mut new = Vec::new();
-
-    /* loop and .next() to get around borrowing with for a in iterator */
-    loop {
-        let expr = iter.next();
-        match expr {
-            None => break,
-            Some(Nil) => {},
-            Some(Literal(v)) => {
-                let mut cloned = v.clone();
-                /* literal, nil, ?? -> literal, opt(??) */
-                println!("dealing with literal {}: {:?}", v, input);
-                if let Some(Nil) = iter.peek() {
-                    iter.next();
-                    println!("got nil after literal {}: {:?}", v, input);
-                    match iter.peek() {
-                        None => {
-                            /* push the value, no further interesting values */
-                            new.push(Literal(cloned));
-                        },
-                        Some(Literal(v2)) => {
-                            /* literal, nil, literal -> combined literal */
-                            cloned.push_str(&v2);
-                            new.push(Literal(cloned));
-                        }
-                        _ => new.push(Literal(cloned))
-                    }
-                } else {
-                    new.push(Literal(cloned))
-                }
-            }
-            Some(Variable(var)) => new.push(Variable(var.clone())),
-//            Conditional(c) => new.push(Conditional(c.clone())), /* FIXME: */
-            Some(FuncCall(name, args)) => new.push(FuncCall(name.clone(), simplify(args.to_vec()))),
-        }
-    }
-    new
-}
 
 pub fn parse(input: &str) -> Result<Vec<Expr>, Error> {
     match expr(CompleteStr(input)) {
-        Ok((_, expr)) => {println!("{:?}", expr); Ok(simplify(expr))},
+        Ok((_, expr)) => {println!("{:?}", expr); Ok(expr)},
         e => { println!("{:?}", e); Err(ParseError)},
     }
 }
@@ -293,7 +301,7 @@ mod tests {
             ])
         ]);
     }
-/*
+
    #[test]
     fn test_function_comment() {
         assert_eq!(parse("$f(var//\n)").unwrap(), vec![
@@ -302,7 +310,7 @@ mod tests {
             ])
         ]);
     }
-*/
+
    #[test]
     fn test_empty_comment() {
         assert_eq!(parse("//\n").unwrap(), vec![]);
@@ -316,5 +324,28 @@ mod tests {
         assert_eq!(parsed, vec![]);
         parsed = parse("// comment").unwrap();
         assert_eq!(parsed, vec![]);
+    }
+
+   #[test]
+    fn test_possibly_special_literals() {
+        let mut parsed = parse(",").unwrap();
+        assert_eq!(parsed, vec![Literal(String::from(","))]);
+        parsed = parse("<").unwrap();
+        assert_eq!(parsed, vec![Literal(String::from("<"))]);
+        parsed = parse(">").unwrap();
+        assert_eq!(parsed, vec![Literal(String::from(">"))]);
+        parsed = parse("(").unwrap();
+        assert_eq!(parsed, vec![Literal(String::from("("))]);
+        parsed = parse(")").unwrap();
+        assert_eq!(parsed, vec![Literal(String::from(")"))]);
+        parsed = parse("/").unwrap();
+        assert_eq!(parsed, vec![Literal(String::from("/"))]);
+    }
+
+   #[test]
+    fn test_combined_special() {
+        /* tests that special characters in literals are combined correctly */
+        let parsed = parse("a,b,c(d").unwrap();
+        assert_eq!(parsed, vec![Literal(String::from("a,b,c(d"))]);
     }
 }

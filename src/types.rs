@@ -31,7 +31,6 @@ impl fmt::Display for Error {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
-  Nil,
   Literal(String),
   Variable(String),             /* %variable% */
 //  Conditional(Box<Expr>),       /* [expression] */

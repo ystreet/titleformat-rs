@@ -35,7 +35,6 @@ impl Program {
 
   fn eval(&self, expr : &Expr) -> Result<String, Error> {
     match expr {
-      Nil => Ok("".to_string()),
       Literal(v) => Ok(v.clone()),
       Variable(var) => Ok(self.env.get(&var).to_string()),
 //      Conditional(c) => Ok("".to_string()), /* FIXME: */
