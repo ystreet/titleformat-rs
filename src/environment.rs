@@ -31,12 +31,12 @@ pub struct Environment {
 
 impl Environment {
   fn add_default_functions (&mut self) -> () {
-    self.funcs.insert(String::from("add"), FuncValue::NativeFnError(functions::add));
-    self.funcs.insert(String::from("sub"), FuncValue::NativeFnError(functions::sub));
-    self.funcs.insert(String::from("div"), FuncValue::NativeFnError(functions::div));
-    self.funcs.insert(String::from("mul"), FuncValue::NativeFnError(functions::mul));
-    self.funcs.insert(String::from("max"), FuncValue::NativeFnError(functions::max));
-    self.funcs.insert(String::from("min"), FuncValue::NativeFnError(functions::min));
+    self.funcs.insert(String::from("add"), FuncValue::NativeFnError(functions::num::add::add));
+    self.funcs.insert(String::from("sub"), FuncValue::NativeFnError(functions::num::sub::sub));
+    self.funcs.insert(String::from("mul"), FuncValue::NativeFnError(functions::num::mul::mul));
+    self.funcs.insert(String::from("div"), FuncValue::NativeFnError(functions::num::div::div));
+    self.funcs.insert(String::from("min"), FuncValue::NativeFnError(functions::num::min::min));
+    self.funcs.insert(String::from("max"), FuncValue::NativeFnError(functions::num::max::max));
   }
 
   pub fn new() -> Self {
