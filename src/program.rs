@@ -2,7 +2,7 @@ use types::Error;
 use types::Expr;
 use types::Expr::*;
 use parser;
-use environment::Environment;
+use environment::{Environment, Value};
 
 #[derive(Debug)]
 pub struct Program {
@@ -28,23 +28,29 @@ impl Program {
   pub fn run (&mut self) -> Result<String, Error> {
     let mut result = String::new();
     for e in &self.instr {
-      result.push_str(&self.eval(&e)?);
+      result.push_str(&self.eval(&e)?.val);
     }
     Ok(result)
   }
 
-  fn eval(&self, expr : &Expr) -> Result<String, Error> {
+  fn eval(&self, expr : &Expr) -> Result<Value, Error> {
     match expr {
-      Literal(v) => Ok(v.clone()),
-      Variable(var) => Ok(self.env.get(&var).to_string()),
-//      Conditional(c) => Ok("".to_string()), /* FIXME: */
+      /* literals are always true for conditionals */
+      Literal(v) => Ok(Value { val : v.clone(), cond : true} ),
+      Variable(var) => Ok(self.env.get(&var)),
+      Conditional(c) => {
+          match self.eval(c)? {
+            Value { val : v, cond : true } => Ok(Value { val : v.clone(), cond : true }),
+            _ => Ok(Value { val : String::from(""), cond : false }),
+          }
+      },
       FuncCall(name, args) => {
         let mut evaluated_args = Vec::new();
         for arg in args {
           let mut new_arg = self.eval(arg)?;
-          evaluated_args.push(String::from(new_arg));
+          evaluated_args.push(new_arg);
         };
-        Ok(self.env.call(&name, evaluated_args)?.to_string())
+        Ok(self.env.call(&name, evaluated_args)?)
       },
     }
   }
@@ -86,7 +92,7 @@ mod tests {
     fn test_run_unknown_variable() {
         let mut prog = Program::new();
         prog.parse("%unknown%").unwrap();
-        assert_eq!(prog.run().unwrap(), String::from(""));
+        assert_eq!(prog.run().unwrap(), String::from("?"));
     }
 
     #[test]
@@ -118,5 +124,35 @@ mod tests {
         prog.env.set("a", "2");
         assert_eq!(prog.run().unwrap(), String::from("4"));
         assert_eq!(prog.run().unwrap(), String::from("4"));
+    }
+
+    #[test]
+    fn test_run_conditional_variable_exists() {
+        let mut prog = Program::new();
+        prog.parse("[%a%]").unwrap();
+        prog.env.set("a", "2");
+        assert_eq!(prog.run().unwrap(), String::from("2"));
+    }
+
+    #[test]
+    fn test_run_conditional_variable_nonexistent() {
+        let mut prog = Program::new();
+        prog.parse("[%a%]").unwrap();
+        assert_eq!(prog.run().unwrap(), String::from(""));
+    }
+
+    #[test]
+    fn test_run_conditional_function_variable_exists() {
+        let mut prog = Program::new();
+        prog.parse("[$add(%a%,2)]").unwrap();
+        prog.env.set("a", "2");
+        assert_eq!(prog.run().unwrap(), String::from("4"));
+    }
+
+    #[test]
+    fn test_run_conditional_function_variable_nonexistent() {
+        let mut prog = Program::new();
+        prog.parse("[$add(%a%,2)]").unwrap();
+        assert_eq!(prog.run().unwrap(), String::from(""));
     }
 }

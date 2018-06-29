@@ -9,7 +9,6 @@ use types::Error;
 use types::Error::*;
 
 /* based on https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Title_Formatting_Reference */
-/* TODO: conditionals */
 
 /* comment
  *
@@ -64,6 +63,27 @@ named!(func<CompleteStr, Expr>,
     )
 );
 
+/* Evaluates the expression between [ and ]. If it has the truth value true,
+ * its string value and the truth value true are returned. Otherwise an empty
+ * string and false are returned.
+
+ * Example: [%artist%] returns the value of the artist tag, if it exists.
+ * Otherwise it returns nothing, when artist would return "?". 
+ */
+named!(conditional<CompleteStr, Expr>,
+    delimited!(
+        tag!("["),
+        return_error!(ErrorKind::Custom(3),
+            do_parse!(
+                expr : conditional_expr >>
+                (parse_conditional(expr))
+            )
+        ),
+        tag!("]")
+    )
+);
+
+
 /* text literal
  *
  * Any other text is literal text. In literal text, the character
@@ -102,10 +122,8 @@ named!(base_literal<CompleteStr, String>,
             unescaped_literal
           | escaped_literal
             /* [, ], <, > currently unused */
-          | map!(tag!("["),  |_| String::from("["))
-          | map!(tag!("]"),  |_| String::from("]"))
-          | map!(tag!("<"),  |_| String::from("<"))
-          | map!(tag!(">"),  |_| String::from(">"))
+          | map!(tag!("<"),     |_| String::from("<"))
+          | map!(tag!(">"),     |_| String::from(">"))
           | map!(tag!("\'\'"),  |_| String::from("\'"))
           | map!(tag!("/"),     |_| String::from("/"))
           | map!(tag!("\n"),    |_| String::from(""))
@@ -118,7 +136,8 @@ named!(base_literal<CompleteStr, String>,
 named!(function_literal<CompleteStr, String>,
     alt!(
         base_literal
-      | map!(tag!("("), |_| String::from("("))
+      | map!(tag!("("),  |_| String::from("("))
+      | map!(tag!("]"),  |_| String::from("]"))
     )
 );
 named!(function_literal_expr<CompleteStr, Expr>,
@@ -133,12 +152,33 @@ named!(function_literal_expr<CompleteStr, Expr>,
 );
 named!(function_expr<CompleteStr, Expr>, alt!(func | variable | function_literal_expr));
 
+named!(conditional_literal<CompleteStr, String>,
+    alt!(
+        base_literal
+      | map!(tag!("("),  |_| String::from("("))
+      | map!(tag!(")"),  |_| String::from("("))
+      | map!(tag!(","),  |_| String::from(","))
+    )
+);
+named!(conditional_literal_expr<CompleteStr, Expr>,
+    do_parse!(
+        lit : fold_many1!(conditional_literal,
+            String::new(), |mut acc : String, item : String| {
+                acc.push_str(&item);
+                acc
+            }) >>
+        (parse_literal(&lit))
+    )
+);
+named!(conditional_expr<CompleteStr, Expr>, alt!(func | variable | conditional_literal_expr));
+
 /* literals outside functions, variables and conditionas */
 named!(standard_literal<CompleteStr, String>,
     alt!(
         base_literal
       | map!(tag!("("),  |_| String::from("("))
       | map!(tag!(")"),  |_| String::from(")"))
+      | map!(tag!("]"),  |_| String::from("]"))
       | map!(tag!(","),  |_| String::from(","))
     )
 );
@@ -153,7 +193,7 @@ named!(standard_literal_expr<CompleteStr, Expr>,
     )
 );
 
-named!(nested_expr<CompleteStr, Expr>, alt!(func | variable | standard_literal_expr));
+named!(nested_expr<CompleteStr, Expr>, alt!(conditional | func | variable | standard_literal_expr));
 named!(expr<CompleteStr, Vec<Expr>>, many0!(nested_expr));
 
 pub fn parse(input: &str) -> Result<Vec<Expr>, Error> {
@@ -161,6 +201,11 @@ pub fn parse(input: &str) -> Result<Vec<Expr>, Error> {
         Ok((_, expr)) => {println!("{:?}", expr); Ok(expr)},
         e => { println!("{:?}", e); Err(ParseError)},
     }
+}
+
+fn parse_conditional(conditional : Expr) -> Expr {
+    println!("got conditional {:?}", conditional);
+    Conditional(Box::new(conditional))
 }
 
 fn parse_literal(literal: &str) -> Expr {
@@ -347,5 +392,26 @@ mod tests {
         /* tests that special characters in literals are combined correctly */
         let parsed = parse("a,b,c(d").unwrap();
         assert_eq!(parsed, vec![Literal(String::from("a,b,c(d"))]);
+    }
+
+   #[test]
+    fn test_conditional_literal() {
+        let parsed = parse("[a]").unwrap();
+        assert_eq!(parsed, vec![Conditional(Box::new(Literal(String::from("a"))))]);
+    }
+
+   #[test]
+    fn test_conditional_variable() {
+        let parsed = parse("[%a%]").unwrap();
+        assert_eq!(parsed, vec![Conditional(Box::new(Variable(String::from("a"))))]);
+    }
+
+   #[test]
+    fn test_conditional_function() {
+        let parsed = parse("[$a(b)]").unwrap();
+        assert_eq!(parsed, vec![Conditional(Box::new(FuncCall(
+            String::from("a"),
+            vec![Literal(String::from("b"))]
+        )))]);
     }
 }

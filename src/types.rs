@@ -33,8 +33,7 @@ impl fmt::Display for Error {
 pub enum Expr {
   Literal(String),
   Variable(String),             /* %variable% */
-//  Conditional(Box<Expr>),       /* [expression] */
+  Conditional(Box<Expr>),       /* [expression] */
   FuncCall(String, Vec<Expr>),  /* $func(args) */
-  /* XXX: comments */
 }
 
