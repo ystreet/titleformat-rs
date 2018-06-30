@@ -39,6 +39,7 @@ impl Environment {
     self.funcs.insert(String::from("div"), FuncValue::NativeFnError(functions::num::div::div));
     self.funcs.insert(String::from("min"), FuncValue::NativeFnError(functions::num::min::min));
     self.funcs.insert(String::from("max"), FuncValue::NativeFnError(functions::num::max::max));
+
     self.funcs.insert(String::from("if"), FuncValue::NativeCondFnError(functions::control::if_::if_));
     self.funcs.insert(String::from("if2"), FuncValue::NativeCondFnError(functions::control::if2::if2));
     self.funcs.insert(String::from("if3"), FuncValue::NativeCondFnError(functions::control::if3::if3));
@@ -53,6 +54,8 @@ impl Environment {
 
     self.funcs.insert(String::from("meta"), FuncValue::NativeEnvFnError(functions::env::meta::meta));
     self.funcs.insert(String::from("meta_sep"), FuncValue::NativeEnvFnError(functions::env::meta::meta_sep));
+    self.funcs.insert(String::from("meta_num"), FuncValue::NativeEnvFnError(functions::env::meta::meta_num));
+    self.funcs.insert(String::from("meta_test"), FuncValue::NativeEnvFnError(functions::env::meta::meta_test));
   }
 
   pub fn new(metadata : HashMap<String, Vec<String>>) -> Self {
@@ -121,6 +124,13 @@ impl Environment {
         value_string (&s, true)
       },
       None => value_string("?", false),
+    }
+  }
+
+  pub fn meta_num(&self, key : &str) -> usize {
+    match self.metadata.get(key) {
+      Some(v) => v.len(),
+      None => 0,
     }
   }
 
