@@ -55,6 +55,9 @@ impl Environment {
     self.funcs.insert(String::from("xor"), FuncValue::NativeCondFnError(functions::control::xor::xor));
     self.funcs.insert(String::from("not"), FuncValue::NativeCondFnError(functions::control::not::not));
 
+    self.funcs.insert(String::from("crlf"), FuncValue::NativeCondFnError(functions::str::constants::crlf));
+    self.funcs.insert(String::from("tab"), FuncValue::NativeCondFnError(functions::str::constants::tab));
+
     self.funcs.insert(String::from("meta"), FuncValue::NativeEnvFnError(Environment::meta_value));
     self.funcs.insert(String::from("meta_sep"), FuncValue::NativeEnvFnError(Environment::meta_sep_value));
     self.funcs.insert(String::from("meta_num"), FuncValue::NativeEnvFnError(Environment::meta_num_value));
@@ -71,7 +74,7 @@ impl Environment {
   /// Constructing an `Environment` without any metadata
   ///
   /// ```
-  /// use foobar2000::environment::Environment;
+  /// # use foobar2000::environment::Environment;
   /// # use std::collections::HashMap;
   /// let env = Environment::new(HashMap::new());
   /// ```
@@ -79,7 +82,7 @@ impl Environment {
   /// Constructing an `Environment` with various metadata
   ///
   /// ```
-  /// use foobar2000::environment::Environment;
+  /// # use foobar2000::environment::Environment;
   /// # use std::collections::HashMap;
   /// let mut metadata = HashMap::new();
   /// metadata.insert(String::from("key"), vec![String::from("value1"), String::from("value2")]);
