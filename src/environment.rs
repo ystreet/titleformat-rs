@@ -98,9 +98,9 @@ impl Environment {
     env
   }
 
-  fn put_value(env : &Environment, args : Vec<Value>) -> Result<Value, Error> {
+  fn put_value(&self, args : Vec<Value>) -> Result<Value, Error> {
     match args.len() {
-      2 => Ok(value_string(&env.put(&args[0].val, &args[1].val), true)),
+      2 => Ok(value_string(&self.put(&args[0].val, &args[1].val), true)),
       _ => Err(InvalidNativeFunctionArgs(String::from("put"), args.len())),
     }
   }
@@ -112,9 +112,9 @@ impl Environment {
     s
   }
 
-  fn puts_value(env : &Environment, args : Vec<Value>) -> Result<Value, Error> {
+  fn puts_value(&self, args : Vec<Value>) -> Result<Value, Error> {
     match args.len() {
-      2 => Ok(value_string({ env.puts(&args[0].val, &args[1].val); "" }, true)),
+      2 => Ok(value_string({ self.puts(&args[0].val, &args[1].val); "" }, true)),
       _ => Err(InvalidNativeFunctionArgs(String::from("puts"), args.len())),
     }
   }
@@ -124,10 +124,10 @@ impl Environment {
     self.vars.borrow_mut().insert(String::from(key), String::from(val));
   }
 
-  fn get_value(env : &Environment, args : Vec<Value>) -> Result<Value, Error> {
+  fn get_value(&self, args : Vec<Value>) -> Result<Value, Error> {
     match args.len() {
-      1 => Ok(env.get(&args[0].val)),
-      _ => Err(InvalidNativeFunctionArgs(String::from("put"), args.len())),
+      1 => Ok(self.get(&args[0].val)),
+      _ => Err(InvalidNativeFunctionArgs(String::from("get"), args.len())),
     }
   }
 
@@ -298,6 +298,32 @@ mod tests {
     }
 
     #[test]
+    fn test_put_get_value() {
+        let env = Environment::new(HashMap::new());
+
+        assert_eq!(env.put_value(vec![
+                value_string("a", true),
+                value_string("val", true)
+            ]).unwrap(),
+            value_string("val", true));
+        assert_eq!(
+            env.get_value(vec![value_string("a", true)]).unwrap(),
+            value_string ("val", true)
+        );
+
+        assert_eq!(env.puts_value(vec![
+                value_string("b", true),
+                value_string("bar", true)
+            ]).unwrap(),
+            value_string("", true)
+        );
+        assert_eq!(
+            env.get_value(vec![value_string("b", true)]).unwrap(),
+            value_string ("bar", true)
+        );
+    }
+
+    #[test]
     fn test_puts_get() {
         let env = Environment::new(HashMap::new());
         env.puts("a", "val");
@@ -334,6 +360,12 @@ mod tests {
             InvalidNativeFunctionArgs(String::from("meta_sep"), 0));
         assert_eq!(env.meta_num_value(vec![]).err().unwrap(),
             InvalidNativeFunctionArgs(String::from("meta_num"), 0));
+        assert_eq!(env.put_value(vec![]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("put"), 0));
+        assert_eq!(env.puts_value(vec![]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("puts"), 0));
+        assert_eq!(env.get_value(vec![]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("get"), 0));
     }
 
     #[test]
@@ -360,6 +392,14 @@ mod tests {
                 ]
             ).unwrap(),
             value_string("1", true)
+        );
+        assert_eq!(env.meta_value(
+                vec![
+                    value_string("a", true),
+                    value_string("1000", true)
+                ]
+            ).unwrap(),
+            value_string("?", false)
         );
     }
 
@@ -409,6 +449,13 @@ mod tests {
             ).unwrap(),
             value_string("4", true)
         );
+        assert_eq!(env.meta_num_value(
+                vec![
+                    value_string("unknown", true)
+                ]
+            ).unwrap(),
+            value_string("0", true)
+        );
     }
 
     #[test]
@@ -431,6 +478,13 @@ mod tests {
                 ]
             ).unwrap(),
             value_string("", true)
+        );
+        assert_eq!(env.meta_test_value(
+                vec![
+                    value_string("unknown", true),
+                ]
+            ).unwrap(),
+            value_string("", false)
         );
     }
 }
