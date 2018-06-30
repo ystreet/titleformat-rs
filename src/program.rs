@@ -2,9 +2,9 @@ use types::Error;
 use types::Expr;
 use types::Expr::*;
 use parser;
-use environment::{Environment, Value};
+use environment::{Environment, Value, value_string};
+use std::collections::HashMap;
 
-#[derive(Debug)]
 pub struct Program {
   instr : Vec<Expr>,
   env : Environment,
@@ -14,18 +14,22 @@ impl Program {
   pub fn new() -> Self {
     let prog = Program {
       instr : vec![],
-      env : Environment::new(),
+      env : Environment::new(HashMap::new()),
     };
     prog
   }
 
   pub fn parse (&mut self, instr : &str) -> Result<(), Error> {
     self.instr = parser::parse(instr)?;
-    self.env = Environment::new();
     Ok(())
   }
 
   pub fn run (&mut self) -> Result<String, Error> {
+    self.run_with_meta(HashMap::new())
+  }
+
+  pub fn run_with_meta (&mut self, metadata : HashMap<String, Vec<String>>) -> Result<String, Error> {
+    self.env = Environment::new(metadata);
     let mut result = String::new();
     for e in &self.instr {
       result.push_str(&self.eval(&e)?.val);
@@ -36,12 +40,12 @@ impl Program {
   fn eval(&self, expr : &Expr) -> Result<Value, Error> {
     match expr {
       /* literals are always true for conditionals */
-      Literal(v) => Ok(Value { val : v.clone(), cond : true} ),
-      Variable(var) => Ok(self.env.get(&var)),
+      Literal(v) => Ok(value_string(&v, true)),
+      Variable(var) => Ok(self.env.meta_i(&var, 0)),
       Conditional(c) => {
           match self.eval(c)? {
-            Value { val : v, cond : true } => Ok(Value { val : v.clone(), cond : true }),
-            _ => Ok(Value { val : String::from(""), cond : false }),
+            Value { val : v, cond : true } => Ok(value_string(&v, true)),
+            _ => Ok(value_string("",  false)),
           }
       },
       FuncCall(name, args) => {
@@ -84,8 +88,9 @@ mod tests {
     fn test_run() {
         let mut prog = Program::new();
         prog.parse("%a%").unwrap();
-        prog.env.set("a", "val");
-        assert_eq!(prog.run().unwrap(), String::from("val"));
+        let mut m = HashMap::new();
+        m.insert(String::from("a"), vec![String::from("val")]);
+        assert_eq!(prog.run_with_meta(m).unwrap(), String::from("val"));
     }
 
     #[test]
@@ -106,8 +111,9 @@ mod tests {
     fn test_run_func_variable() {
         let mut prog = Program::new();
         prog.parse("$add(%a%,2)").unwrap();
-        prog.env.set("a", "2");
-        assert_eq!(prog.run().unwrap(), String::from("4"));
+        let mut m = HashMap::new();
+        m.insert(String::from("a"), vec![String::from("2")]);
+        assert_eq!(prog.run_with_meta(m).unwrap(), String::from("4"));
     }
 
     #[test]
@@ -121,17 +127,19 @@ mod tests {
     fn test_multi_run() {
         let mut prog = Program::new();
         prog.parse("$add(%a%,2)").unwrap();
-        prog.env.set("a", "2");
-        assert_eq!(prog.run().unwrap(), String::from("4"));
-        assert_eq!(prog.run().unwrap(), String::from("4"));
+        let mut m = HashMap::new();
+        m.insert(String::from("a"), vec![String::from("2")]);
+        assert_eq!(prog.run_with_meta(m.clone()).unwrap(), String::from("4"));
+        assert_eq!(prog.run_with_meta(m).unwrap(), String::from("4"));
     }
 
     #[test]
     fn test_run_conditional_variable_exists() {
         let mut prog = Program::new();
         prog.parse("[%a%]").unwrap();
-        prog.env.set("a", "2");
-        assert_eq!(prog.run().unwrap(), String::from("2"));
+        let mut m = HashMap::new();
+        m.insert(String::from("a"), vec![String::from("val")]);
+        assert_eq!(prog.run_with_meta(m).unwrap(), String::from("val"));
     }
 
     #[test]
@@ -145,8 +153,9 @@ mod tests {
     fn test_run_conditional_function_variable_exists() {
         let mut prog = Program::new();
         prog.parse("[$add(%a%,2)]").unwrap();
-        prog.env.set("a", "2");
-        assert_eq!(prog.run().unwrap(), String::from("4"));
+        let mut m = HashMap::new();
+        m.insert(String::from("a"), vec![String::from("2")]);
+        assert_eq!(prog.run_with_meta(m).unwrap(), String::from("4"));
     }
 
     #[test]
