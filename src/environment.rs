@@ -39,6 +39,17 @@ impl Environment {
     self.funcs.insert(String::from("div"), FuncValue::NativeFnError(functions::num::div::div));
     self.funcs.insert(String::from("min"), FuncValue::NativeFnError(functions::num::min::min));
     self.funcs.insert(String::from("max"), FuncValue::NativeFnError(functions::num::max::max));
+    self.funcs.insert(String::from("if"), FuncValue::NativeCondFnError(functions::control::if_::if_));
+    self.funcs.insert(String::from("if2"), FuncValue::NativeCondFnError(functions::control::if2::if2));
+    self.funcs.insert(String::from("if3"), FuncValue::NativeCondFnError(functions::control::if3::if3));
+    self.funcs.insert(String::from("ifequal"), FuncValue::NativeCondFnError(functions::control::ifequal::ifequal));
+    self.funcs.insert(String::from("ifgreater"), FuncValue::NativeCondFnError(functions::control::ifgreater::ifgreater));
+    self.funcs.insert(String::from("iflonger"), FuncValue::NativeCondFnError(functions::control::iflonger::iflonger));
+    self.funcs.insert(String::from("select"), FuncValue::NativeCondFnError(functions::control::select::select));
+    self.funcs.insert(String::from("and"), FuncValue::NativeCondFnError(functions::control::and::and));
+    self.funcs.insert(String::from("or"), FuncValue::NativeCondFnError(functions::control::or::or));
+    self.funcs.insert(String::from("xor"), FuncValue::NativeCondFnError(functions::control::xor::xor));
+    self.funcs.insert(String::from("not"), FuncValue::NativeCondFnError(functions::control::not::not));
 
     self.funcs.insert(String::from("meta"), FuncValue::NativeEnvFnError(functions::env::meta::meta));
     self.funcs.insert(String::from("meta_sep"), FuncValue::NativeEnvFnError(functions::env::meta::meta_sep));
