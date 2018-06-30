@@ -10,6 +10,14 @@ pub struct Program {
 }
 
 impl Program {
+
+  /// Constructs a new Program
+  ///
+  /// # Examples
+  /// ```
+  /// # use foobar2000::program::Program;
+  /// let program = Program::new();
+  /// ```
   pub fn new() -> Self {
     let prog = Program {
       instr : vec![],
@@ -17,15 +25,44 @@ impl Program {
     prog
   }
 
+  /// Parses a program string
+  ///
+  /// # Examples
+  /// ```
+  /// # use foobar2000::program::Program;
+  /// let mut program = Program::new();
+  /// assert_eq!(program.parse("[%artist%]").unwrap(), ());
+  /// ```
   pub fn parse (&mut self, instr : &str) -> Result<(), Error> {
     self.instr = parser::parse(instr)?;
     Ok(())
   }
 
+  /// Executes a program without any metadata
+  ///
+  /// # Examples
+  /// ```
+  /// # use foobar2000::program::Program;
+  /// let mut program = Program::new();
+  /// assert_eq!(program.parse("[%artist%]").unwrap(), ());
+  /// assert_eq!(program.run().unwrap(), String::from(""));
+  /// ```
   pub fn run (&mut self) -> Result<String, Error> {
     self.run_with_meta(HashMap::new())
   }
 
+  /// Executes a program with associated metadata
+  ///
+  /// # Examples
+  /// ```
+  /// # use foobar2000::program::Program;
+  /// # use std::collections::HashMap;
+  /// let mut program = Program::new();
+  /// assert_eq!(program.parse("[%artist%]").unwrap(), ());
+  /// let mut metadata = HashMap::new();
+  /// metadata.insert("artist".into(), vec!["Happy".into()]);
+  /// assert_eq!(program.run_with_meta(metadata).unwrap(), String::from("Happy"));
+  /// ```
   pub fn run_with_meta (&self, metadata : HashMap<String, Vec<String>>) -> Result<String, Error> {
     let mut env = Environment::new(metadata);
     let mut result = String::new();
