@@ -1,5 +1,8 @@
 # TitleFormat-rs
 
+[![Build Status](https://travis-ci.com/ystreet/titleformat-rs.svg?branch=master)](https://travis-ci.org/ystreet/title-format-rs)
+[![codecov](https://codecov.io/gh/ystreet/titleformat-rs/branch/master/graph/badge.svg)](https://codecov.io/gh/ystreet/titleformat-rs)
+
 A foobar200 TitleFormat parser and executor for rust based on the reference
 available from [https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Title_Formatting_Reference](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Title_Formatting_Reference)
 
