@@ -22,6 +22,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn wrong_n_arguments() {
+        assert_eq!(min(
+            vec![
+                String::from("a")
+            ]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("min"), 1));
+    }
+
+    #[test]
     fn test_min() {
         assert_eq!(
             String::from("1"),

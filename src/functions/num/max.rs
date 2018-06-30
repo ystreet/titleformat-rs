@@ -22,6 +22,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn wrong_n_arguments() {
+        assert_eq!(max(
+            vec![
+                String::from("a")
+            ]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("max"), 1));
+    }
+
+    #[test]
     fn test_max() {
         assert_eq!(
             String::from("2"),

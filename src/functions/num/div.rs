@@ -28,6 +28,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn wrong_n_arguments() {
+        assert_eq!(div(
+            vec![
+                String::from("a")
+            ]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("div"), 1));
+    }
+
+    #[test]
     fn test_div() {
         assert_eq!(
             String::from("16"),

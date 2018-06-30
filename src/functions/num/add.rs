@@ -18,6 +18,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn wrong_n_arguments() {
+        assert_eq!(add(
+            vec![
+                String::from("a")
+            ]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("add"), 1));
+    }
+
+    #[test]
     fn test_add() {
         assert_eq!(
             String::from("4"),

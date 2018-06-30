@@ -25,6 +25,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn wrong_n_arguments() {
+        assert_eq!(sub(
+            vec![
+                String::from("a")
+            ]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("sub"), 1));
+    }
+
+    #[test]
     fn test_sub() {
         assert_eq!(
             String::from("0"),
