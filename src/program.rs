@@ -7,14 +7,12 @@ use std::collections::HashMap;
 
 pub struct Program {
   instr : Vec<Expr>,
-  env : Environment,
 }
 
 impl Program {
   pub fn new() -> Self {
     let prog = Program {
       instr : vec![],
-      env : Environment::new(HashMap::new()),
     };
     prog
   }
@@ -28,22 +26,22 @@ impl Program {
     self.run_with_meta(HashMap::new())
   }
 
-  pub fn run_with_meta (&mut self, metadata : HashMap<String, Vec<String>>) -> Result<String, Error> {
-    self.env = Environment::new(metadata);
+  pub fn run_with_meta (&self, metadata : HashMap<String, Vec<String>>) -> Result<String, Error> {
+    let mut env = Environment::new(metadata);
     let mut result = String::new();
     for e in &self.instr {
-      result.push_str(&self.eval(&e)?.val);
+      result.push_str(&self.eval(&mut env, &e)?.val);
     }
     Ok(result)
   }
 
-  fn eval(&self, expr : &Expr) -> Result<Value, Error> {
+  fn eval(&self, env : &mut Environment, expr : &Expr) -> Result<Value, Error> {
     match expr {
       /* literals are always true for conditionals */
       Literal(v) => Ok(value_string(&v, true)),
-      Variable(var) => Ok(self.env.meta_i(&var, 0)),
+      Variable(var) => Ok(env.get_variable(&var)),
       Conditional(c) => {
-          match self.eval(c)? {
+          match self.eval(env, c)? {
             Value { val : v, cond : true } => Ok(value_string(&v, true)),
             _ => Ok(value_string("",  false)),
           }
@@ -51,10 +49,10 @@ impl Program {
       FuncCall(name, args) => {
         let mut evaluated_args = Vec::new();
         for arg in args {
-          let mut new_arg = self.eval(arg)?;
+          let mut new_arg = self.eval(env, arg)?;
           evaluated_args.push(new_arg);
         };
-        Ok(self.env.call(&name, evaluated_args)?)
+        Ok(env.call(&name, evaluated_args)?)
       },
     }
   }

@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
 use types::Error;
+use types::Error::*;
+use std::cell::RefCell;
 
 use functions;
+use functions::num::to_int;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Value {
@@ -26,7 +29,7 @@ pub enum FuncValue {
 /* like a register file in a cpu, but with strings! */
 #[derive(Clone)]
 pub struct Environment {
-  vars     : HashMap<String, String>,
+  vars     : RefCell<HashMap<String, String>>,
   metadata : HashMap<String, Vec<String>>,
   funcs    : HashMap<String, FuncValue>,
 }
@@ -52,15 +55,39 @@ impl Environment {
     self.funcs.insert(String::from("xor"), FuncValue::NativeCondFnError(functions::control::xor::xor));
     self.funcs.insert(String::from("not"), FuncValue::NativeCondFnError(functions::control::not::not));
 
-    self.funcs.insert(String::from("meta"), FuncValue::NativeEnvFnError(functions::env::meta::meta));
-    self.funcs.insert(String::from("meta_sep"), FuncValue::NativeEnvFnError(functions::env::meta::meta_sep));
-    self.funcs.insert(String::from("meta_num"), FuncValue::NativeEnvFnError(functions::env::meta::meta_num));
-    self.funcs.insert(String::from("meta_test"), FuncValue::NativeEnvFnError(functions::env::meta::meta_test));
+    self.funcs.insert(String::from("meta"), FuncValue::NativeEnvFnError(Environment::meta_value));
+    self.funcs.insert(String::from("meta_sep"), FuncValue::NativeEnvFnError(Environment::meta_sep_value));
+    self.funcs.insert(String::from("meta_num"), FuncValue::NativeEnvFnError(Environment::meta_num_value));
+    self.funcs.insert(String::from("meta_test"), FuncValue::NativeEnvFnError(Environment::meta_test_value));
+    self.funcs.insert(String::from("get"), FuncValue::NativeEnvFnError(Environment::get_value));
+    self.funcs.insert(String::from("put"), FuncValue::NativeEnvFnError(Environment::put_value));
+    self.funcs.insert(String::from("puts"), FuncValue::NativeEnvFnError(Environment::puts_value));
   }
 
+  /// Constructs a new `Environment`
+  ///
+  /// # Examples
+  ///
+  /// Constructing an `Environment` without any metadata
+  ///
+  /// ```
+  /// use foobar2000::environment::Environment;
+  /// # use std::collections::HashMap;
+  /// let env = Environment::new(HashMap::new());
+  /// ```
+  ///
+  /// Constructing an `Environment` with various metadata
+  ///
+  /// ```
+  /// use foobar2000::environment::Environment;
+  /// # use std::collections::HashMap;
+  /// let mut metadata = HashMap::new();
+  /// metadata.insert(String::from("key"), vec![String::from("value1"), String::from("value2")]);
+  /// let env = Environment::new(metadata);
+  /// ```
   pub fn new(metadata : HashMap<String, Vec<String>>) -> Self {
     let mut env = Environment {
-      vars     : HashMap::new(),
+      vars     : RefCell::new(HashMap::new()),
       metadata : metadata.clone(),
       funcs    : HashMap::new(),
     };
@@ -68,27 +95,53 @@ impl Environment {
     env
   }
 
+  fn put_value(env : &Environment, args : Vec<Value>) -> Result<Value, Error> {
+    match args.len() {
+      2 => Ok(value_string(&env.put(&args[0].val, &args[1].val), true)),
+      _ => Err(InvalidNativeFunctionArgs(String::from("put"), args.len())),
+    }
+  }
+
   /* sets %key% to val and returns val */
-  pub fn put(&mut self, key : &str, val : &str) -> String {
+  fn put(&self, key : &str, val : &str) -> String {
     let s = String::from(val);
-    self.vars.insert(String::from(key), s.clone());
+    self.vars.borrow_mut().insert(String::from(key), s.clone());
     s
   }
 
-  /* sets %key% to val */
-  pub fn puts(&mut self, key : &str, val : &str) {
-    self.vars.insert(String::from(key), String::from(val));
+  fn puts_value(env : &Environment, args : Vec<Value>) -> Result<Value, Error> {
+    match args.len() {
+      2 => Ok(value_string({ env.puts(&args[0].val, &args[1].val); "" }, true)),
+      _ => Err(InvalidNativeFunctionArgs(String::from("puts"), args.len())),
+    }
   }
 
-  /* get %key% */
-  pub fn get(&self, key : &str) -> Value {
-    match self.vars.get(key) {
+  /* sets key to val inside vars */
+  fn puts(&self, key : &str, val : &str) {
+    self.vars.borrow_mut().insert(String::from(key), String::from(val));
+  }
+
+  fn get_value(env : &Environment, args : Vec<Value>) -> Result<Value, Error> {
+    match args.len() {
+      1 => Ok(env.get(&args[0].val)),
+      _ => Err(InvalidNativeFunctionArgs(String::from("put"), args.len())),
+    }
+  }
+
+  /* sets key from vars */
+  fn get(&self, key : &str) -> Value {
+    match self.vars.borrow().get(key) {
       Some(v) => Value { val : v.clone(), cond : true },
       None => Value { val : String::from("?"), cond : false },
     }
   }
 
-  pub fn meta_i(&self, key : &str, i : usize) -> Value {
+  pub fn get_variable(&self, key : &str) -> Value {
+    self.meta_i(key, 0)
+  }
+
+  /* gets the ith key from the metadata */
+  fn meta_i(&self, key : &str, i : usize) -> Value {
     match self.metadata.get(key) {
       Some(v) => {
         if i >= v.len() {
@@ -101,15 +154,18 @@ impl Environment {
     }
   }
 
-  pub fn meta(&self, key : &str) -> Value {
+  /* gets the key from the metadata separated by ", " */
+  fn meta(&self, key : &str) -> Value {
     self.meta_sep(key, ", ")
   }
 
-  pub fn meta_sep(&self, key : &str, sep : &str) -> Value {
+  /* gets the key from the metadata separated by sep */
+  fn meta_sep(&self, key : &str, sep : &str) -> Value {
     self.meta_sep_with_last(key, sep, sep)
   }
 
-  pub fn meta_sep_with_last(&self, key : &str, sep : &str, last_sep : &str) -> Value {
+  /* gets the key from the metadata separated by ", " and last separator with last_sep */
+  fn meta_sep_with_last(&self, key : &str, sep : &str, last_sep : &str) -> Value {
     match self.metadata.get(key) {
       Some(v) => {
         let mut s = String::from("");
@@ -127,15 +183,81 @@ impl Environment {
     }
   }
 
-  pub fn meta_num(&self, key : &str) -> usize {
+  fn meta_num(&self, key : &str) -> usize {
     match self.metadata.get(key) {
       Some(v) => v.len(),
       None => 0,
     }
   }
 
+/*
+ * $meta(name)
+ * Returns value of tag called name. If multiple values of that tag exist,
+ * they are concatenated with ", " as separator.
+ * Example: $meta(artist) → "He, She, It"
+ *
+ * $meta(name,n)
+ * Returns value of n-th (0,1,2 and so on) tag called name.
+ * Example: $meta(artist,1) → "She" 
+ */
+  fn meta_value(&self, args : Vec<Value>) -> Result<Value, Error> {
+    match args.len() {
+      1 => Ok(self.meta(&args[0].val)),
+      2 => Ok(self.meta_i(&args[0].val, to_int(&args[1].val) as usize)),
+      _ => Err(InvalidNativeFunctionArgs(String::from("meta"), args.len())),
+    }
+  }
+
+/*
+ * $meta_sep(name,sep)
+ * Returns value of tag called name. If multiple values of that tag exist, they are concatenated with sep as separator.
+ * Example: $meta_sep(artist,' + ') → "He + She + It"
+ *
+ * $meta_sep(name,sep,lastsep)
+ * Returns value of tag called name. If multiple values of that tag exist,
+ * they are concatenated with sep as separator between all but the last two
+ * values which are concatenated with lastsep.
+ * Example: $meta_sep(artist,', ',', and ') → "He, She, and It"
+ */
+  fn meta_sep_value (&self, args : Vec<Value>) -> Result<Value, Error> {
+    match args.len() {
+      2 => Ok(self.meta_sep(&args[0].val, &args[1].val)),
+      3 => Ok(self.meta_sep_with_last(&args[0].val, &args[1].val, &args[2].val)),
+      _ => Err(InvalidNativeFunctionArgs(String::from("meta_sep"), args.len())),
+    }
+  }
+
+/*
+ * $meta_test(...)
+ * Returns 1, if all given tags exist, undefined otherwise.
+ * Example: $meta_test(artist,title) → true
+ */
+  fn meta_test_value (&self, args : Vec<Value>) -> Result<Value, Error> {
+    match args.len() {
+      0 => Err(InvalidNativeFunctionArgs(String::from("meta_num"), args.len())),
+      _ => Ok(value_string("", args.iter().fold(true, |c, i| {
+        c && self.meta_num(&i.val) > 0
+      }))),
+    }
+  }
+
+/*
+ * $meta_num(name)
+ * Returns the number of values for the tag called name.
+ * Example: $meta_num(artist) → 3
+ */
+  fn meta_num_value (&self, args : Vec<Value>) -> Result<Value, Error> {
+    match args.len() {
+      1 => Ok(value_string(&self.meta_num(&args[0].val).to_string(), true)),
+      _ => Err(InvalidNativeFunctionArgs(String::from("meta_num"), args.len())),
+    }
+  }
+
   pub fn call(&self, name : &str, args : Vec<Value>) -> Result<Value, Error> {
-    match self.funcs.get(name) {
+    let f = {
+        self.funcs.get(name)
+    };
+    match f {
       Some(func_val) => match func_val {
         FuncValue::NativeFn(func) => {
             /* return true only if all inputs are true */
@@ -167,14 +289,14 @@ mod tests {
 
     #[test]
     fn test_put_get() {
-        let mut env = Environment::new(HashMap::new());
+        let env = Environment::new(HashMap::new());
         assert_eq!(env.put("a", "val"), String::from("val"));
         assert_eq!(env.get("a"), value_string ("val", true));
     }
 
     #[test]
     fn test_puts_get() {
-        let mut env = Environment::new(HashMap::new());
+        let env = Environment::new(HashMap::new());
         env.puts("a", "val");
         assert_eq!(env.get("a"), value_string ("val", true));
     }
@@ -198,5 +320,114 @@ mod tests {
         let env = Environment::new(HashMap::new());
         assert_eq!(env.call("unknown", vec![]).err().unwrap(),
             Error::UndefinedFunction(String::from("unknown")));
+    }
+
+    #[test]
+    fn wrong_n_arguments() {
+        let env = Environment::new(HashMap::new());
+        assert_eq!(env.meta_value(vec![]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("meta"), 0));
+        assert_eq!(env.meta_sep_value(vec![]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("meta_sep"), 0));
+        assert_eq!(env.meta_num_value(vec![]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("meta_num"), 0));
+    }
+
+    #[test]
+    fn test_meta() {
+        let mut m = HashMap::new();
+        m.insert(String::from("a"), vec![
+            String::from("0"),
+            String::from("1"),
+            String::from("2"),
+            String::from("3")
+        ]);
+        let env = Environment::new(m);
+        assert_eq!(env.meta_value(
+                vec![
+                    value_string("a", true)
+                ]
+            ).unwrap(),
+            value_string("0, 1, 2, 3", true)
+        );
+        assert_eq!(env.meta_value(
+                vec![
+                    value_string("a", true),
+                    value_string("1", true)
+                ]
+            ).unwrap(),
+            value_string("1", true)
+        );
+    }
+
+    #[test]
+    fn test_meta_sep() {
+        let mut m = HashMap::new();
+        m.insert(String::from("a"), vec![
+            String::from("0"),
+            String::from("1"),
+            String::from("2"),
+            String::from("3")
+        ]);
+        let env = Environment::new(m);
+        assert_eq!(env.meta_sep_value(
+                vec![
+                    value_string("a", true),
+                    value_string("|", true)
+                ]
+            ).unwrap(),
+            value_string("0|1|2|3", true)
+        );
+        assert_eq!(env.meta_sep_value(
+                vec![
+                    value_string("a", true),
+                    value_string("|", true),
+                    value_string("^", true)
+                ]
+            ).unwrap(),
+            value_string("0|1|2^3", true)
+        );
+    }
+
+    #[test]
+    fn test_meta_num() {
+        let mut m = HashMap::new();
+        m.insert(String::from("a"), vec![
+            String::from("0"),
+            String::from("1"),
+            String::from("2"),
+            String::from("3")
+        ]);
+        let env = Environment::new(m);
+        assert_eq!(env.meta_num_value(
+                vec![
+                    value_string("a", true)
+                ]
+            ).unwrap(),
+            value_string("4", true)
+        );
+    }
+
+    #[test]
+    fn test_meta_test() {
+        let mut m = HashMap::new();
+        m.insert(String::from("a"), vec![
+            String::from("0"),
+            String::from("1"),
+            String::from("2"),
+            String::from("3")
+        ]);
+        m.insert(String::from("b"), vec![
+            String::from("4"),
+        ]);
+        let env = Environment::new(m);
+        assert_eq!(env.meta_test_value(
+                vec![
+                    value_string("a", true),
+                    value_string("b", true)
+                ]
+            ).unwrap(),
+            value_string("", true)
+        );
     }
 }
