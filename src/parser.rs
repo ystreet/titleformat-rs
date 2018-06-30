@@ -156,7 +156,7 @@ named!(conditional_literal<CompleteStr, String>,
     alt!(
         base_literal
       | map!(tag!("("),  |_| String::from("("))
-      | map!(tag!(")"),  |_| String::from("("))
+      | map!(tag!(")"),  |_| String::from(")"))
       | map!(tag!(","),  |_| String::from(","))
     )
 );
@@ -340,7 +340,7 @@ mod tests {
                 Literal(String::from("var"))
             ])
         ]);
-        assert_eq!(parse("$f(\nvar\n)").unwrap(), vec![
+        assert_eq!(parse("$f(\nvar\r\n)").unwrap(), vec![
             FuncCall(String::from("f"), vec![
                 Literal(String::from("var"))
             ])
@@ -390,8 +390,21 @@ mod tests {
    #[test]
     fn test_combined_special() {
         /* tests that special characters in literals are combined correctly */
-        let parsed = parse("a,b,c(d").unwrap();
-        assert_eq!(parsed, vec![Literal(String::from("a,b,c(d"))]);
+        let parsed = parse("a,b,c(d]").unwrap();
+        assert_eq!(parsed, vec![Literal(String::from("a,b,c(d]"))]);
+    }
+
+   #[test]
+    fn test_conditional_special() {
+        let parsed = parse("[a),(]").unwrap();
+        assert_eq!(parsed, vec![Conditional(Box::new(Literal(String::from("a),("))))]);
+    }
+
+   #[test]
+    fn test_function_special() {
+        let parsed = parse("$a(b(])").unwrap();
+        assert_eq!(parsed, vec![FuncCall(String::from("a"),
+            vec![Literal(String::from("b(]"))])]);
     }
 
    #[test]
