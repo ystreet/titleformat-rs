@@ -14,7 +14,7 @@ available from [https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Title_For
 
 ## LICENSE
 
-gstreamer-rs and all crates contained in here are licensed under either of
+TitleFormat-rs and all crates contained in here are licensed under either of
 
  * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
    http://www.apache.org/licenses/LICENSE-2.0)
