@@ -1,5 +1,6 @@
 # TitleFormat-rs
 
+[![crates.io](https://img.shields.io/crates/v/titleformat-rs.svg)](https://crates.io/crates/titleformat-rs)
 [![Build Status](https://travis-ci.com/ystreet/titleformat-rs.svg?branch=master)](https://travis-ci.com/ystreet/titleformat-rs)
 [![codecov](https://codecov.io/gh/ystreet/titleformat-rs/branch/master/graph/badge.svg)](https://codecov.io/gh/ystreet/titleformat-rs)
 
