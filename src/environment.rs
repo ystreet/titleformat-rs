@@ -74,7 +74,7 @@ impl Environment {
   /// Constructing an `Environment` without any metadata
   ///
   /// ```
-  /// # use foobar2000::environment::Environment;
+  /// # use titleformat_rs::environment::Environment;
   /// # use std::collections::HashMap;
   /// let env = Environment::new(HashMap::new());
   /// ```
@@ -82,7 +82,7 @@ impl Environment {
   /// Constructing an `Environment` with various metadata
   ///
   /// ```
-  /// # use foobar2000::environment::Environment;
+  /// # use titleformat_rs::environment::Environment;
   /// # use std::collections::HashMap;
   /// let mut metadata = HashMap::new();
   /// metadata.insert(String::from("key"), vec![String::from("value1"), String::from("value2")]);

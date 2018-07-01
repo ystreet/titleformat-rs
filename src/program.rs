@@ -15,7 +15,7 @@ impl Program {
   ///
   /// # Examples
   /// ```
-  /// # use foobar2000::program::Program;
+  /// # use titleformat_rs::program::Program;
   /// let program = Program::new();
   /// ```
   pub fn new() -> Self {
@@ -29,7 +29,7 @@ impl Program {
   ///
   /// # Examples
   /// ```
-  /// # use foobar2000::program::Program;
+  /// # use titleformat_rs::program::Program;
   /// let mut program = Program::new();
   /// assert_eq!(program.parse("[%artist%]").unwrap(), ());
   /// ```
@@ -42,7 +42,7 @@ impl Program {
   ///
   /// # Examples
   /// ```
-  /// # use foobar2000::program::Program;
+  /// # use titleformat_rs::program::Program;
   /// let mut program = Program::new();
   /// assert_eq!(program.parse("[%artist%]").unwrap(), ());
   /// assert_eq!(program.run().unwrap(), String::from(""));
@@ -55,7 +55,7 @@ impl Program {
   ///
   /// # Examples
   /// ```
-  /// # use foobar2000::program::Program;
+  /// # use titleformat_rs::program::Program;
   /// # use std::collections::HashMap;
   /// let mut program = Program::new();
   /// assert_eq!(program.parse("[%artist%]").unwrap(), ());

@@ -1,8 +1,24 @@
 [package]
-name = "foobar2000"
+name = "titleformat-rs"
 version = "0.1.0"
-authors = ["Matthew Waters <matthew@centricular.com>"]
+authors = ["Matthew Waters <ystreet00@gmail.com>"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/ystreet/titleformat-rs"
+homepage = "https://github.com/ystreet/titleformat-rs"
+keywords = ["foobar2000", "titleformat", "parser"]
+categories = ["parser-implementations", "text-processing", "multimedia"]
+description = """
+A foobar2000 titleformat parser for rust
+"""
+exclude = [
+    ".travis.yml"
+]
 
 [dependencies.nom]
 version = "4.0"
 #features = ["verbose-errors"]
+
+[badges]
+travis-ci = { repository = "ystreet/titleformat-rs" }
+codecov = { repository = "ystreet/titleformat-rs", service = "github" }
