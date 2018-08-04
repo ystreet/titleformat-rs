@@ -1,6 +1,8 @@
 use std::fmt;
 use std::result;
 
+use environment::Value;
+
 pub type Result = result::Result<Expr, Error>;
 
 #[derive(Debug, PartialEq)]
@@ -33,7 +35,8 @@ impl fmt::Display for Error {
 pub enum Expr {
   Literal(String),
   Variable(String),             /* %variable% */
-  Conditional(Box<Expr>),       /* [expression] */
+  Conditional(Vec<Expr>),       /* [expression] */
   FuncCall(String, Vec<Expr>),  /* $func(args) */
+  ExprValue(Value),             /* program internal value for resolved expressions */
 }
 

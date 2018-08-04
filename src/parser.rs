@@ -170,7 +170,7 @@ named!(conditional_literal_expr<CompleteStr, Expr>,
         (parse_literal(&lit))
     )
 );
-named!(conditional_expr<CompleteStr, Expr>, alt!(func | variable | conditional_literal_expr));
+named!(conditional_expr<CompleteStr, Vec<Expr>>, many0!(alt!(func | variable | conditional_literal_expr)));
 
 /* literals outside functions, variables and conditionas */
 named!(standard_literal<CompleteStr, String>,
@@ -203,9 +203,9 @@ pub fn parse(input: &str) -> Result<Vec<Expr>, Error> {
     }
 }
 
-fn parse_conditional(conditional : Expr) -> Expr {
+fn parse_conditional(conditional : Vec<Expr>) -> Expr {
     println!("got conditional {:?}", conditional);
-    Conditional(Box::new(conditional))
+    Conditional(conditional)
 }
 
 fn parse_literal(literal: &str) -> Expr {
@@ -397,7 +397,7 @@ mod tests {
    #[test]
     fn test_conditional_special() {
         let parsed = parse("[a),(]").unwrap();
-        assert_eq!(parsed, vec![Conditional(Box::new(Literal(String::from("a),("))))]);
+        assert_eq!(parsed, vec![Conditional(vec![Literal(String::from("a),("))])]);
     }
 
    #[test]
@@ -410,21 +410,30 @@ mod tests {
    #[test]
     fn test_conditional_literal() {
         let parsed = parse("[a]").unwrap();
-        assert_eq!(parsed, vec![Conditional(Box::new(Literal(String::from("a"))))]);
+        assert_eq!(parsed, vec![Conditional(vec![Literal(String::from("a"))])]);
     }
 
    #[test]
     fn test_conditional_variable() {
         let parsed = parse("[%a%]").unwrap();
-        assert_eq!(parsed, vec![Conditional(Box::new(Variable(String::from("a"))))]);
+        assert_eq!(parsed, vec![Conditional(vec![Variable(String::from("a"))])]);
+    }
+
+   #[test]
+    fn test_conditional_variable_literal() {
+        let parsed = parse("[%a%b]").unwrap();
+        assert_eq!(parsed, vec![Conditional(vec![
+            Variable(String::from("a")),
+            Literal(String::from("b")),
+        ])]);
     }
 
    #[test]
     fn test_conditional_function() {
         let parsed = parse("[$a(b)]").unwrap();
-        assert_eq!(parsed, vec![Conditional(Box::new(FuncCall(
+        assert_eq!(parsed, vec![Conditional(vec![FuncCall(
             String::from("a"),
             vec![Literal(String::from("b"))]
-        )))]);
+        )])]);
     }
 }
