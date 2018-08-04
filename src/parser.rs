@@ -150,7 +150,7 @@ named!(function_literal_expr<CompleteStr, Expr>,
         (parse_literal(&lit))
     )
 );
-named!(function_expr<CompleteStr, Expr>, alt!(func | variable | function_literal_expr));
+named!(function_expr<CompleteStr, Expr>, alt!(conditional | func | variable | function_literal_expr));
 
 named!(conditional_literal<CompleteStr, String>,
     alt!(
@@ -170,7 +170,7 @@ named!(conditional_literal_expr<CompleteStr, Expr>,
         (parse_literal(&lit))
     )
 );
-named!(conditional_expr<CompleteStr, Vec<Expr>>, many0!(alt!(func | variable | conditional_literal_expr)));
+named!(conditional_expr<CompleteStr, Vec<Expr>>, many0!(alt!(conditional | func | variable | conditional_literal_expr)));
 
 /* literals outside functions, variables and conditionas */
 named!(standard_literal<CompleteStr, String>,
@@ -435,5 +435,32 @@ mod tests {
             String::from("a"),
             vec![Literal(String::from("b"))]
         )])]);
+    }
+
+   #[test]
+    fn test_conditional_conditional() {
+        let parsed = parse("[[%a%]]").unwrap();
+        assert_eq!(parsed, vec![
+            Conditional(vec![
+                Conditional(vec![
+                    Variable(String::from("a"))
+                ])
+            ])
+        ]);
+    }
+
+   #[test]
+    fn test_func_conditional() {
+        let parsed = parse("$a([%b%])").unwrap();
+        assert_eq!(parsed, vec![
+            FuncCall(
+                String::from("a"),
+                vec![
+                    Conditional(vec![
+                        Variable(String::from("b"))
+                    ])
+                ]
+            )
+        ]);
     }
 }
