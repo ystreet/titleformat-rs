@@ -42,6 +42,12 @@ mod tests {
                 value_string("blah", false)
             ]).err().unwrap(),
             InvalidNativeFunctionArgs(String::from("crlf"), 1));
+        assert_eq!(tab(
+            vec![
+                value_string("blah", false),
+                value_string("blah", false)
+            ]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("tab"), 2));
     }
 
     #[test]
