@@ -72,13 +72,26 @@ impl Program {
     Ok(result)
   }
 
+  fn resolve_arg_vec (&self, env : &mut Environment, args : &Vec<Expr>) -> Result<Expr, Error> {
+    let mut new_arg = value_string("", false);
+    for arg in args {
+      let tmp = self.eval (env, &arg)?;
+      new_arg.val = new_arg.val + &tmp.val;
+      /* picard does an or here */
+      new_arg.cond = new_arg.cond || tmp.cond;
+    }
+    Ok(ExprValue(new_arg))
+  }
+
   fn eval(&self, env : &mut Environment, expr : &Expr) -> Result<Value, Error> {
     match expr {
+      ExprValue(v) => Ok(v.clone()),
       /* literals are always true for conditionals */
       Literal(v) => Ok(value_string(&v, true)),
       Variable(var) => Ok(env.get_variable(&var)),
-      Conditional(c) => {
-          match self.eval(env, c)? {
+      Conditional(args) => {
+          let arg = self.resolve_arg_vec (env, args)?;
+          match self.eval(env, &arg)? {
             Value { val : v, cond : true } => Ok(value_string(&v, true)),
             _ => Ok(value_string("",  false)),
           }
@@ -198,5 +211,14 @@ mod tests {
         let mut prog = Program::new();
         prog.parse("[$add(%a%,2)]").unwrap();
         assert_eq!(prog.run().unwrap(), String::from(""));
+    }
+
+   #[test]
+    fn test_conditional_variable_literal() {
+        let mut prog = Program::new();
+        prog.parse("[%a%b]").unwrap();
+        let mut m = HashMap::new();
+        m.insert(String::from("a"), vec![String::from("2")]);
+        assert_eq!(prog.run_with_meta(m).unwrap(), String::from("2b"));
     }
 }
