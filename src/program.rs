@@ -65,21 +65,25 @@ impl Program {
   /// ```
   pub fn run_with_meta (&self, metadata : HashMap<String, Vec<String>>) -> Result<String, Error> {
     let mut env = Environment::new(metadata);
-    let mut result = String::new();
-    for e in &self.instr {
-      result.push_str(&self.eval(&mut env, &e)?.val);
-    }
+    let result = match self.resolve_arg_vec(&mut env, &self.instr)? {
+      ExprValue(v) => v.val.clone(),
+      _ => unreachable!(),
+    };
     Ok(result)
   }
 
+  /* resolves a set of expressions into a single resolved value
+   * e.g. '%artist%literal' with artist=best would resolve to 'bestliteral' */
   fn resolve_arg_vec (&self, env : &mut Environment, args : &Vec<Expr>) -> Result<Expr, Error> {
     let mut new_arg = value_string("", false);
+
     for arg in args {
       let tmp = self.eval (env, &arg)?;
       new_arg.val = new_arg.val + &tmp.val;
       /* picard does an or here */
       new_arg.cond = new_arg.cond || tmp.cond;
     }
+
     Ok(ExprValue(new_arg))
   }
 
@@ -98,8 +102,9 @@ impl Program {
       },
       FuncCall(name, args) => {
         let mut evaluated_args = Vec::new();
-        for arg in args {
-          let mut new_arg = self.eval(env, arg)?;
+        for unresolved in args {
+          let resolved = self.resolve_arg_vec (env, unresolved)?;
+          let mut new_arg = self.eval(env, &resolved)?;
           evaluated_args.push(new_arg);
         };
         Ok(env.call(&name, evaluated_args)?)
