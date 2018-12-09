@@ -37,6 +37,13 @@ mod tests {
             ]).unwrap(),
             value_string("", true)
         );
+        assert_eq!(
+            or(vec![
+                value_string("", false),
+                value_string("", true),
+            ]).unwrap(),
+            value_string("", true)
+        );
     }
 
     #[test]
