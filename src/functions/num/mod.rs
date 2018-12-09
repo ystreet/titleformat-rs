@@ -4,6 +4,7 @@ pub mod mul;
 pub mod div;
 pub mod min;
 pub mod max;
+pub mod control;
 
 /* The functions in this section can be used to perform arithmetic on
  * integer numbers. A string will be automatically converted to a number
