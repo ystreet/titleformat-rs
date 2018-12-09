@@ -77,6 +77,7 @@ impl Environment {
     self.funcs.insert(String::from("swapprefix"), FuncValue::NativeCondFnError(functions::str::modify::swapprefix));
     self.funcs.insert(String::from("cut"), FuncValue::NativeCondFnError(functions::str::modify::cut));
     self.funcs.insert(String::from("left"), FuncValue::NativeCondFnError(functions::str::modify::left));
+    self.funcs.insert(String::from("num"), FuncValue::NativeCondFnError(functions::str::format::num));
 
     self.funcs.insert(String::from("meta"), FuncValue::NativeEnvFnError(Environment::meta_value));
     self.funcs.insert(String::from("meta_sep"), FuncValue::NativeEnvFnError(Environment::meta_sep_value));
