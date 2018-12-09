@@ -57,6 +57,7 @@ impl Environment {
 
     self.funcs.insert(String::from("crlf"), FuncValue::NativeCondFnError(functions::str::constants::crlf));
     self.funcs.insert(String::from("tab"), FuncValue::NativeCondFnError(functions::str::constants::tab));
+    self.funcs.insert(String::from("noop"), FuncValue::NativeCondFnError(functions::str::constants::noop));
 
     self.funcs.insert(String::from("meta"), FuncValue::NativeEnvFnError(Environment::meta_value));
     self.funcs.insert(String::from("meta_sep"), FuncValue::NativeEnvFnError(Environment::meta_sep_value));
