@@ -31,6 +31,10 @@ pub fn tab(args : Vec<Value>) -> Result<Value, Error> {
     }
 }
 
+pub fn noop(_args : Vec<Value>) -> Result<Value, Error> {
+    Ok(value_string("", true))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -62,5 +66,13 @@ mod tests {
             value_string("\t", true));
         assert_eq!(tab(vec![value_string("4", true)]).unwrap(),
             value_string("\t\t\t\t", true));
+    }
+
+    #[test]
+    fn test_noop() {
+        assert_eq!(noop(vec![]).unwrap(),
+            value_string("", true));
+        assert_eq!(noop(vec![value_string("jibberish", true)]).unwrap(),
+            value_string("", true));
     }
 }
