@@ -147,7 +147,8 @@ named!(base_literal<CompleteStr, String>,
           | map!(tag!("<"),     |_| String::from("<"))
           | map!(tag!(">"),     |_| String::from(">"))
           | map!(tag!("\'\'"),  |_| String::from("\'"))
-          | map!(tag!("/"),     |_| String::from("/"))) >>
+          | map!(tag!("/"),     |_| String::from("/"))
+        ) >>
         opt!(comment) >>
         (ret)
     )
@@ -323,7 +324,7 @@ mod tests {
         ]);
     }
 
-   #[test]
+    #[test]
     fn test_literal_variable() {
         let parsed = parse("ab").unwrap();
         assert_eq!(parsed, vec![
@@ -331,7 +332,7 @@ mod tests {
         ]);
     }
 
-   #[test]
+    #[test]
     fn test_literal() {
         let parsed = parse("ab -_=+").unwrap();
         assert_eq!(parsed, vec![
@@ -339,7 +340,7 @@ mod tests {
         ]);
     }
 
-   #[test]
+    #[test]
     fn test_escaped_literals() {
         assert_eq!(parse("\'%\'").unwrap(), vec![
             Literal(String::from("%"))
@@ -358,7 +359,7 @@ mod tests {
         ]);
     }
 
-   #[test]
+    #[test]
     fn test_function_newlines() {
         /* all newlines between tokens are ignored */
         assert_eq!(parse("$f(var)\n").unwrap(), vec![
@@ -378,7 +379,7 @@ mod tests {
         ]);
     }
 
-   #[test]
+    #[test]
     fn test_function_comment() {
         assert_eq!(parse("$f(var//\n)").unwrap(), vec![
             FuncCall(String::from("f"), vec![
@@ -387,12 +388,12 @@ mod tests {
         ]);
     }
 
-   #[test]
+    #[test]
     fn test_empty_comment() {
         assert_eq!(parse("//\n").unwrap(), vec![]);
     }
 
-   #[test]
+    #[test]
     fn test_comment() {
         let mut parsed = parse("// comment\n").unwrap();
         assert_eq!(parsed, vec![]);
@@ -402,7 +403,7 @@ mod tests {
         assert_eq!(parsed, vec![]);
     }
 
-   #[test]
+    #[test]
     fn test_possibly_special_literals() {
         let mut parsed = parse(",").unwrap();
         assert_eq!(parsed, vec![Literal(String::from(","))]);
@@ -418,20 +419,20 @@ mod tests {
         assert_eq!(parsed, vec![Literal(String::from("/"))]);
     }
 
-   #[test]
+    #[test]
     fn test_combined_special() {
         /* tests that special characters in literals are combined correctly */
         let parsed = parse("a,b,c(d]").unwrap();
         assert_eq!(parsed, vec![Literal(String::from("a,b,c(d]"))]);
     }
 
-   #[test]
+    #[test]
     fn test_conditional_special() {
         let parsed = parse("[a),(]").unwrap();
         assert_eq!(parsed, vec![Conditional(vec![Literal(String::from("a),("))])]);
     }
 
-   #[test]
+    #[test]
     fn test_function_special() {
         let parsed = parse("$a(b(])").unwrap();
         assert_eq!(parsed, vec![FuncCall(
@@ -442,19 +443,19 @@ mod tests {
         )]);
     }
 
-   #[test]
+    #[test]
     fn test_conditional_literal() {
         let parsed = parse("[a]").unwrap();
         assert_eq!(parsed, vec![Conditional(vec![Literal(String::from("a"))])]);
     }
 
-   #[test]
+    #[test]
     fn test_conditional_variable() {
         let parsed = parse("[%a%]").unwrap();
         assert_eq!(parsed, vec![Conditional(vec![Variable(String::from("a"))])]);
     }
 
-   #[test]
+    #[test]
     fn test_conditional_variable_literal() {
         let parsed = parse("[%a%b]").unwrap();
         assert_eq!(parsed, vec![Conditional(vec![
@@ -463,7 +464,7 @@ mod tests {
         ])]);
     }
 
-   #[test]
+    #[test]
     fn test_conditional_function() {
         let parsed = parse("[$a(b)]").unwrap();
         assert_eq!(parsed, vec![Conditional(vec![FuncCall(
@@ -474,7 +475,7 @@ mod tests {
         )])]);
     }
 
-   #[test]
+    #[test]
     fn test_conditional_conditional() {
         let parsed = parse("[[%a%]]").unwrap();
         assert_eq!(parsed, vec![
@@ -486,7 +487,7 @@ mod tests {
         ]);
     }
 
-   #[test]
+    #[test]
     fn test_func_conditional() {
         let parsed = parse("$a([%b%])").unwrap();
         assert_eq!(parsed, vec![
