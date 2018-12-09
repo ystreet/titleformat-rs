@@ -68,6 +68,13 @@ pub fn cut(args : Vec<Value>) -> Result<Value, Error> {
     Ok(value_string (&res, args[0].cond))
 }
 
+pub fn left(args : Vec<Value>) -> Result<Value, Error> {
+    if args.len() != 2 {
+        return Err(InvalidNativeFunctionArgs(String::from("left"), args.len()))
+    }
+    cut (args)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,6 +87,8 @@ mod tests {
             InvalidNativeFunctionArgs(String::from("swapprefix"), 0));
         assert_eq!(cut(vec![]).err().unwrap(),
             InvalidNativeFunctionArgs(String::from("cut"), 0));
+        assert_eq!(left(vec![]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("left"), 0));
     }
 
     #[test]
