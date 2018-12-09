@@ -66,6 +66,17 @@ impl Environment {
     self.funcs.insert(String::from("tab"), FuncValue::NativeCondFnError(functions::str::constants::tab));
     self.funcs.insert(String::from("noop"), FuncValue::NativeCondFnError(functions::str::constants::noop));
 
+    self.funcs.insert(String::from("upper"), FuncValue::NativeCondFnError(functions::str::case::upper));
+    self.funcs.insert(String::from("lower"), FuncValue::NativeCondFnError(functions::str::case::lower));
+    self.funcs.insert(String::from("firstalphachar"), FuncValue::NativeCondFnError(functions::str::case::firstalphachar));
+
+    self.funcs.insert(String::from("len"), FuncValue::NativeCondFnError(functions::str::size::len));
+    self.funcs.insert(String::from("longer"), FuncValue::NativeCondFnError(functions::str::size::longer));
+
+    self.funcs.insert(String::from("stripprefix"), FuncValue::NativeCondFnError(functions::str::modify::stripprefix));
+    self.funcs.insert(String::from("swapprefix"), FuncValue::NativeCondFnError(functions::str::modify::swapprefix));
+    self.funcs.insert(String::from("cut"), FuncValue::NativeCondFnError(functions::str::modify::cut));
+
     self.funcs.insert(String::from("meta"), FuncValue::NativeEnvFnError(Environment::meta_value));
     self.funcs.insert(String::from("meta_sep"), FuncValue::NativeEnvFnError(Environment::meta_sep_value));
     self.funcs.insert(String::from("meta_num"), FuncValue::NativeEnvFnError(Environment::meta_num_value));

@@ -19,6 +19,9 @@ exclude = [
 version = "4.1"
 #features = ["verbose-errors"]
 
+[dependencies.unicode-segmentation]
+version = "1.1.0"
+
 [badges]
 travis-ci = { repository = "ystreet/titleformat-rs" }
 codecov = { repository = "ystreet/titleformat-rs", service = "github" }
