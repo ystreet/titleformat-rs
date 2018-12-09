@@ -43,6 +43,13 @@ impl Environment {
     self.funcs.insert(String::from("min"), FuncValue::NativeFnError(functions::num::min::min));
     self.funcs.insert(String::from("max"), FuncValue::NativeFnError(functions::num::max::max));
 
+    self.funcs.insert(String::from("eq"), FuncValue::NativeCondFnError(functions::num::control::eq));
+    self.funcs.insert(String::from("ne"), FuncValue::NativeCondFnError(functions::num::control::ne));
+    self.funcs.insert(String::from("gt"), FuncValue::NativeCondFnError(functions::num::control::gt));
+    self.funcs.insert(String::from("gte"), FuncValue::NativeCondFnError(functions::num::control::gte));
+    self.funcs.insert(String::from("lt"), FuncValue::NativeCondFnError(functions::num::control::lt));
+    self.funcs.insert(String::from("lte"), FuncValue::NativeCondFnError(functions::num::control::lte));
+
     self.funcs.insert(String::from("if"), FuncValue::NativeCondFnError(functions::control::if_::if_));
     self.funcs.insert(String::from("if2"), FuncValue::NativeCondFnError(functions::control::if2::if2));
     self.funcs.insert(String::from("if3"), FuncValue::NativeCondFnError(functions::control::if3::if3));
