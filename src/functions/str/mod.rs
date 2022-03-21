@@ -3,3 +3,4 @@ pub mod size;
 pub mod modify;
 pub mod case;
 pub mod format;
+pub mod datetime;

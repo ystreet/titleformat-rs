@@ -86,6 +86,8 @@ impl Environment {
     self.funcs.insert(String::from("get"), FuncValue::NativeEnvFnError(Environment::get_value));
     self.funcs.insert(String::from("put"), FuncValue::NativeEnvFnError(Environment::put_value));
     self.funcs.insert(String::from("puts"), FuncValue::NativeEnvFnError(Environment::puts_value));
+
+    self.funcs.insert(String::from("year"), FuncValue::NativeCondFnError(functions::str::datetime::year));
   }
 
   /// Constructs a new `Environment`
