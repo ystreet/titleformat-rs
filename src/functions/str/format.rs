@@ -1,10 +1,10 @@
+use crate::environment::value_string;
+use crate::environment::Value;
+use crate::functions::num::to_int;
 use crate::types::Error;
 use crate::types::Error::*;
-use crate::environment::Value;
-use crate::environment::value_string;
-use crate::functions::num::to_int;
 
-pub fn num(args : Vec<Value>) -> Result<Value, Error> {
+pub fn num(args: Vec<Value>) -> Result<Value, Error> {
     if args.len() != 2 {
         return Err(InvalidNativeFunctionArgs(String::from("num"), args.len()));
     }
@@ -12,7 +12,7 @@ pub fn num(args : Vec<Value>) -> Result<Value, Error> {
     let val = to_int(&args[0].val);
     let len = to_int(&args[1].val);
     let mut s = String::from("");
-    if len < 1 || (val < 0 && len < 2)  {
+    if len < 1 || (val < 0 && len < 2) {
         s.push_str(&val.to_string());
     } else {
         let pos = if val < 0 { -val } else { val };
@@ -34,17 +34,25 @@ mod tests {
 
     #[test]
     fn wrong_n_arguments() {
-        assert_eq!(num(vec![]).err().unwrap(),
-            InvalidNativeFunctionArgs(String::from("num"), 0));
+        assert_eq!(
+            num(vec![]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("num"), 0)
+        );
     }
 
     #[test]
     fn test_num() {
-        assert_eq!(num(vec![value_string("-4.8", true), value_string("5", true)]).unwrap(),
-            value_string("-0004", true));
-        assert_eq!(num(vec![value_string("-4.8", true), value_string("1", true)]).unwrap(),
-            value_string("-4", true));
-        assert_eq!(num(vec![value_string("-4.8", true), value_string("-1", true)]).unwrap(),
-            value_string("-4", true));
+        assert_eq!(
+            num(vec![value_string("-4.8", true), value_string("5", true)]).unwrap(),
+            value_string("-0004", true)
+        );
+        assert_eq!(
+            num(vec![value_string("-4.8", true), value_string("1", true)]).unwrap(),
+            value_string("-4", true)
+        );
+        assert_eq!(
+            num(vec![value_string("-4.8", true), value_string("-1", true)]).unwrap(),
+            value_string("-4", true)
+        );
     }
 }

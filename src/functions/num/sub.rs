@@ -6,7 +6,7 @@ use crate::types::Error::*;
 /* $sub(a,b, ...)
  * Subtract a-b-c-...
  */
-pub fn sub(args : Vec<String>) -> Result<String, Error> {
+pub fn sub(args: Vec<String>) -> Result<String, Error> {
     if args.len() < 2 {
         return Err(InvalidNativeFunctionArgs(String::from("sub"), args.len()));
     }
@@ -17,7 +17,7 @@ pub fn sub(args : Vec<String>) -> Result<String, Error> {
             None => unreachable!(),
         }
     };
-    Ok(iter.fold(accum, |cur, x| { cur - to_int(x) }).to_string())
+    Ok(iter.fold(accum, |cur, x| cur - to_int(x)).to_string())
 }
 
 #[cfg(test)]
@@ -26,29 +26,29 @@ mod tests {
 
     #[test]
     fn wrong_n_arguments() {
-        assert_eq!(sub(
-            vec![
-                String::from("a")
-            ]).err().unwrap(),
-            InvalidNativeFunctionArgs(String::from("sub"), 1));
+        assert_eq!(
+            sub(vec![String::from("a")]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("sub"), 1)
+        );
     }
 
     #[test]
     fn test_sub() {
         assert_eq!(
             String::from("0"),
-            sub(vec![
-                String::from("2"),
-                String::from("2")]
-            ).ok().unwrap()
+            sub(vec![String::from("2"), String::from("2")])
+                .ok()
+                .unwrap()
         );
         assert_eq!(
             String::from("4"),
             sub(vec![
                 String::from("8"),
                 String::from("2"),
-                String::from("2")]
-            ).ok().unwrap()
+                String::from("2")
+            ])
+            .ok()
+            .unwrap()
         );
     }
 }

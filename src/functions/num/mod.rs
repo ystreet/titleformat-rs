@@ -1,10 +1,10 @@
 pub mod add;
-pub mod sub;
-pub mod mul;
-pub mod div;
-pub mod min;
-pub mod max;
 pub mod control;
+pub mod div;
+pub mod max;
+pub mod min;
+pub mod mul;
+pub mod sub;
 
 /* The functions in this section can be used to perform arithmetic on
  * integer numbers. A string will be automatically converted to a number
@@ -20,14 +20,19 @@ pub mod control;
 pub fn to_int(s: &str) -> i64 {
     let mut s = String::from(s);
     s = s.trim_start().to_string();
-    let negative = if s.starts_with("-") { s = s.split_off(1); -1 } else { 1 };
+    let negative = if s.starts_with("-") {
+        s = s.split_off(1);
+        -1
+    } else {
+        1
+    };
     let mut num_str = String::from("");
     for i in s.chars() {
         match i {
             '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => num_str.push(i),
             _ => break,
         }
-    };
+    }
     let mut num = 0;
     if !num_str.is_empty() {
         num = num_str.parse::<i64>().unwrap();
@@ -35,18 +40,17 @@ pub fn to_int(s: &str) -> i64 {
     num * negative
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_int() {
-/* c3po → 0
- * 4.8 → 4
- * -12 → -12
- * - 12 → 0
- */
+        /* c3po → 0
+         * 4.8 → 4
+         * -12 → -12
+         * - 12 → 0
+         */
         /* no digits */
         assert_eq!(0, to_int("c3po"));
         /* no floats */

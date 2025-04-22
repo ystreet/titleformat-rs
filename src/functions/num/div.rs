@@ -6,7 +6,7 @@ use crate::types::Error::*;
 /* $div(a,b, ...)
  * Divides a and b and c and ...
  */
-pub fn div(args : Vec<String>) -> Result<String, Error> {
+pub fn div(args: Vec<String>) -> Result<String, Error> {
     if args.len() < 2 {
         return Err(InvalidNativeFunctionArgs(String::from("div"), args.len()));
     }
@@ -17,10 +17,16 @@ pub fn div(args : Vec<String>) -> Result<String, Error> {
             None => unreachable!(),
         }
     };
-    Ok(iter.fold(accum, |cur, x| {
-        let i = to_int(x);
-        if i != 0 { cur / i } else { i }
-    }).to_string())
+    Ok(iter
+        .fold(accum, |cur, x| {
+            let i = to_int(x);
+            if i != 0 {
+                cur / i
+            } else {
+                i
+            }
+        })
+        .to_string())
 }
 
 #[cfg(test)]
@@ -29,29 +35,29 @@ mod tests {
 
     #[test]
     fn wrong_n_arguments() {
-        assert_eq!(div(
-            vec![
-                String::from("a")
-            ]).err().unwrap(),
-            InvalidNativeFunctionArgs(String::from("div"), 1));
+        assert_eq!(
+            div(vec![String::from("a")]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("div"), 1)
+        );
     }
 
     #[test]
     fn test_div() {
         assert_eq!(
             String::from("16"),
-            div(vec![
-                String::from("32"),
-                String::from("2")]
-            ).ok().unwrap()
+            div(vec![String::from("32"), String::from("2")])
+                .ok()
+                .unwrap()
         );
         assert_eq!(
             String::from("8"),
             div(vec![
                 String::from("32"),
                 String::from("2"),
-                String::from("2")]
-            ).ok().unwrap()
+                String::from("2")
+            ])
+            .ok()
+            .unwrap()
         );
     }
 }

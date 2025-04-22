@@ -1,18 +1,21 @@
+use crate::environment::value_string;
+use crate::environment::Value;
 use crate::types::Error;
 use crate::types::Error::*;
-use crate::environment::Value;
-use crate::environment::value_string;
 
 /* $not(expr)
  *
  * Logical Not. Returns the logical opposite of EXPR: false, if expr is
- * true and true if expr is false. 
+ * true and true if expr is false.
  */
-pub fn xor(args : Vec<Value>) -> Result<Value, Error> {
+pub fn xor(args: Vec<Value>) -> Result<Value, Error> {
     if args.len() < 2 {
         return Err(InvalidNativeFunctionArgs(String::from("xor"), args.len()));
     }
-    Ok(value_string ("", args.iter().fold(false, |cur, x| { cur ^ x.cond })))
+    Ok(value_string(
+        "",
+        args.iter().fold(false, |cur, x| cur ^ x.cond),
+    ))
 }
 
 #[cfg(test)]
@@ -21,20 +24,16 @@ mod tests {
 
     #[test]
     fn wrong_n_arguments() {
-        assert_eq!(xor(
-            vec![
-                value_string("", false)
-            ]).err().unwrap(),
-            InvalidNativeFunctionArgs(String::from("xor"), 1));
+        assert_eq!(
+            xor(vec![value_string("", false)]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("xor"), 1)
+        );
     }
 
     #[test]
     fn test_false() {
         assert_eq!(
-            xor(vec![
-                value_string("", true),
-                value_string("", true),
-            ]).unwrap(),
+            xor(vec![value_string("", true), value_string("", true),]).unwrap(),
             value_string("", false)
         );
     }
@@ -42,10 +41,7 @@ mod tests {
     #[test]
     fn test_true() {
         assert_eq!(
-            xor(vec![
-                value_string("", false),
-                value_string("", true),
-            ]).unwrap(),
+            xor(vec![value_string("", false), value_string("", true),]).unwrap(),
             value_string("", true)
         );
     }
@@ -57,7 +53,8 @@ mod tests {
                 value_string("", true),
                 value_string("", true),
                 value_string("", true),
-            ]).unwrap(),
+            ])
+            .unwrap(),
             value_string("", true)
         );
     }
@@ -69,7 +66,8 @@ mod tests {
                 value_string("", false),
                 value_string("", true),
                 value_string("", false),
-            ]).unwrap(),
+            ])
+            .unwrap(),
             value_string("", true)
         );
     }
