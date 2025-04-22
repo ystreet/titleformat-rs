@@ -1,15 +1,15 @@
+use crate::environment::value_string;
+use crate::environment::Value;
 use crate::types::Error;
 use crate::types::Error::*;
-use crate::environment::Value;
-use crate::environment::value_string;
 
 /*
  * $if(cond,then,else)
  *
  * If cond evaluates to true, the then part is evaluated and its value returned.
- * Otherwise, the else part is evaluated and its value returned. 
+ * Otherwise, the else part is evaluated and its value returned.
  */
-pub fn if_ (args : Vec<Value>) -> Result<Value, Error> {
+pub fn if_(args: Vec<Value>) -> Result<Value, Error> {
     match args.len() {
         2 | 3 => Ok(()),
         _ => Err(InvalidNativeFunctionArgs(String::from("if"), args.len())),
@@ -29,52 +29,55 @@ mod tests {
 
     #[test]
     fn wrong_n_arguments() {
-        assert_eq!(if_(
-            vec![
-                value_string("blah", false)
-            ]).err().unwrap(),
-            InvalidNativeFunctionArgs(String::from("if"), 1));
+        assert_eq!(
+            if_(vec![value_string("blah", false)]).err().unwrap(),
+            InvalidNativeFunctionArgs(String::from("if"), 1)
+        );
     }
 
     #[test]
     fn if_false_default() {
-        assert_eq!(if_(
-            vec![
+        assert_eq!(
+            if_(vec![
                 value_string("blah", false),
                 value_string("true", true)
-            ]).unwrap(),
-            value_string("", false));
+            ])
+            .unwrap(),
+            value_string("", false)
+        );
     }
 
     #[test]
     fn if_true_default() {
-        assert_eq!(if_(
-            vec![
-                value_string("blah", true),
-                value_string("true", true)
-            ]).unwrap(),
-            value_string("true", true));
+        assert_eq!(
+            if_(vec![value_string("blah", true), value_string("true", true)]).unwrap(),
+            value_string("true", true)
+        );
     }
 
     #[test]
     fn if_false_else() {
-        assert_eq!(if_(
-            vec![
+        assert_eq!(
+            if_(vec![
                 value_string("blah", false),
                 value_string("true", true),
                 value_string("false", true),
-            ]).unwrap(),
-            value_string("false", true));
+            ])
+            .unwrap(),
+            value_string("false", true)
+        );
     }
 
     #[test]
     fn if_true_else() {
-        assert_eq!(if_(
-            vec![
+        assert_eq!(
+            if_(vec![
                 value_string("blah", true),
                 value_string("true", true),
                 value_string("false", true),
-            ]).unwrap(),
-            value_string("true", true));
+            ])
+            .unwrap(),
+            value_string("true", true)
+        );
     }
 }

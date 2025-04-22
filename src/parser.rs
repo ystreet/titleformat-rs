@@ -3,10 +3,10 @@ use std::str;
 use nom::types::CompleteStr;
 use nom::ErrorKind;
 
-use crate::types::Expr;
-use crate::types::Expr::*;
 use crate::types::Error;
 use crate::types::Error::*;
+use crate::types::Expr;
+use crate::types::Expr::*;
 
 /* based on https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Title_Formatting_Reference */
 
@@ -19,7 +19,7 @@ named!(comment<CompleteStr, String>,
             delimited!(tag!("//"), take_until!("\n"), tag!("\n"))
           | delimited!(tag!("//"), take_until!("\r\n"), tag!("\r\n"))
           | preceded!(tag!("//"), take_till!(|_| { false }))
-        ) >> 
+        ) >>
         (String::from(""))
     )
 );
@@ -59,7 +59,7 @@ named!(variable<CompleteStr, Expr>,
  * $abbr(%artist%). A parameter can be literal text, a field reference, or
  * another function call. Note that there must be no whitespace between the
  * dollar sign and the function name, or the function name and the opening
- * parenthesis of the parameter list. 
+ * parenthesis of the parameter list.
  */
 named!(func<CompleteStr, Expr>,
     preceded!(tag!("$"),
@@ -85,12 +85,12 @@ named!(func_args<CompleteStr, Option<Vec<Vec<Expr>>>>,
 );
 
 /* Evaluates the expression between [ and ]. If it has the truth value true,
- * its string value and the truth value true are returned. Otherwise an empty
- * string and false are returned.
+* its string value and the truth value true are returned. Otherwise an empty
+* string and false are returned.
 
- * Example: [%artist%] returns the value of the artist tag, if it exists.
- * Otherwise it returns nothing, when artist would return "?". 
- */
+* Example: [%artist%] returns the value of the artist tag, if it exists.
+* Otherwise it returns nothing, when artist would return "?".
+*/
 named!(conditional<CompleteStr, Expr>,
     delimited!(
         tag!("["),
@@ -104,7 +104,6 @@ named!(conditional<CompleteStr, Expr>,
     )
 );
 
-
 /* text literal
  *
  * Any other text is literal text. In literal text, the character
@@ -114,9 +113,12 @@ named!(conditional<CompleteStr, Expr>,
  * '' (two single quotes in a row) results in one single quote. In the
  * playlist, < and > are also special; see #Dimmed and highlighted text.
  */
-fn is_special(c : char) -> bool {
-  /* anything that may not be a literal */
-  matches!(c, '%' | '$' | ',' | '[' | ']' | '<' | '>' | '\'' | '(' | ')' | '/' | '\r' | '\n')
+fn is_special(c: char) -> bool {
+    /* anything that may not be a literal */
+    matches!(
+        c,
+        '%' | '$' | ',' | '[' | ']' | '<' | '>' | '\'' | '(' | ')' | '/' | '\r' | '\n'
+    )
 }
 
 named!(unescaped_literal<CompleteStr, String>,
@@ -218,12 +220,18 @@ named!(expr<CompleteStr, Vec<Expr>>, many0!(nested_expr));
 
 pub fn parse(input: &str) -> Result<Vec<Expr>, Error> {
     match expr(CompleteStr(input)) {
-        Ok((_, expr)) => {println!("{:?}", expr); Ok(expr)},
-        e => { println!("{:?}", e); Err(ParseError)},
+        Ok((_, expr)) => {
+            println!("{:?}", expr);
+            Ok(expr)
+        }
+        e => {
+            println!("{:?}", e);
+            Err(ParseError)
+        }
     }
 }
 
-fn parse_conditional(conditional : Vec<Expr>) -> Expr {
+fn parse_conditional(conditional: Vec<Expr>) -> Expr {
     println!("got conditional {:?}", conditional);
     Conditional(conditional)
 }
@@ -238,11 +246,11 @@ fn parse_varname(name: &str) -> Expr {
     Variable(String::from(name))
 }
 
-fn parse_funccall(name: &str, args : Option<Vec<Vec<Expr>>>) -> Expr {
+fn parse_funccall(name: &str, args: Option<Vec<Vec<Expr>>>) -> Expr {
     println!("got function {}", name);
     match args {
-      Some(v) => FuncCall(String::from(name), v),
-      None => FuncCall(String::from(name), vec![vec![]]),
+        Some(v) => FuncCall(String::from(name), v),
+        None => FuncCall(String::from(name), vec![vec![]]),
     }
 }
 
@@ -259,53 +267,45 @@ mod tests {
     #[test]
     fn test_variable() {
         let parsed = parse("%ab%").unwrap();
-        assert_eq!(parsed, vec![
-            Variable(String::from("ab"))
-        ]);
+        assert_eq!(parsed, vec![Variable(String::from("ab"))]);
     }
 
     #[test]
     fn test_empty_funccall() {
         let parsed = parse("$ab()").unwrap();
-        assert_eq!(parsed, vec![
-            FuncCall(
-                String::from("ab"),
-                vec![vec![]]
-            )
-        ]);
+        assert_eq!(parsed, vec![FuncCall(String::from("ab"), vec![vec![]])]);
     }
 
     #[test]
     fn test_funccall_variable() {
         let parsed = parse("$ab(%ba%)").unwrap();
-        assert_eq!(parsed, vec![
-            FuncCall(
+        assert_eq!(
+            parsed,
+            vec![FuncCall(
                 String::from("ab"),
-                vec![
-                    vec![Variable(String::from("ba"))]
-                ]
-            )
-        ]);
+                vec![vec![Variable(String::from("ba"))]]
+            )]
+        );
     }
 
     #[test]
     fn test_funccall_funccall() {
         let parsed = parse("$ab($ba())").unwrap();
-        assert_eq!(parsed, vec![
-            FuncCall(
+        assert_eq!(
+            parsed,
+            vec![FuncCall(
                 String::from("ab"),
-                vec![
-                    vec![FuncCall(String::from("ba"), vec![vec![]])]
-                ]
-            )
-        ]);
+                vec![vec![FuncCall(String::from("ba"), vec![vec![]])]]
+            )]
+        );
     }
 
     #[test]
     fn test_funccall_complex() {
         let parsed = parse("$ab($cd(%e%,fg),hi)").unwrap();
-        assert_eq!(parsed, vec![
-            FuncCall(
+        assert_eq!(
+            parsed,
+            vec![FuncCall(
                 String::from("ab"),
                 vec![
                     vec![FuncCall(
@@ -317,72 +317,66 @@ mod tests {
                     )],
                     vec![Literal(String::from("hi"))]
                 ]
-            )
-        ]);
+            )]
+        );
     }
 
     #[test]
     fn test_literal_variable() {
         let parsed = parse("ab").unwrap();
-        assert_eq!(parsed, vec![
-            Literal(String::from("ab"))
-        ]);
+        assert_eq!(parsed, vec![Literal(String::from("ab"))]);
     }
 
     #[test]
     fn test_literal() {
         let parsed = parse("ab -_=+").unwrap();
-        assert_eq!(parsed, vec![
-            Literal(String::from("ab -_=+"))
-        ]);
+        assert_eq!(parsed, vec![Literal(String::from("ab -_=+"))]);
     }
 
     #[test]
     fn test_escaped_literals() {
-        assert_eq!(parse("\'%\'").unwrap(), vec![
-            Literal(String::from("%"))
-        ]);
-        assert_eq!(parse("\'$\'").unwrap(), vec![
-            Literal(String::from("$"))
-        ]);
-        assert_eq!(parse("\'[\'").unwrap(), vec![
-            Literal(String::from("["))
-        ]);
-        assert_eq!(parse("\']\'").unwrap(), vec![
-            Literal(String::from("]"))
-        ]);
-        assert_eq!(parse("\'\'").unwrap(), vec![
-            Literal(String::from("\'"))
-        ]);
+        assert_eq!(parse("\'%\'").unwrap(), vec![Literal(String::from("%"))]);
+        assert_eq!(parse("\'$\'").unwrap(), vec![Literal(String::from("$"))]);
+        assert_eq!(parse("\'[\'").unwrap(), vec![Literal(String::from("["))]);
+        assert_eq!(parse("\']\'").unwrap(), vec![Literal(String::from("]"))]);
+        assert_eq!(parse("\'\'").unwrap(), vec![Literal(String::from("\'"))]);
     }
 
     #[test]
     fn test_function_newlines() {
         /* all newlines between tokens are ignored */
-        assert_eq!(parse("$f(var)\n").unwrap(), vec![
-            FuncCall(String::from("f"), vec![
-                vec![Literal(String::from("var"))]
-            ])
-        ]);
-        assert_eq!(parse("$f(\nvar)").unwrap(), vec![
-            FuncCall(String::from("f"), vec![
-                vec![Literal(String::from("var"))]
-            ])
-        ]);
-        assert_eq!(parse("$f(\nvar\r\n)").unwrap(), vec![
-            FuncCall(String::from("f"), vec![
-                vec![Literal(String::from("var"))]
-            ])
-        ]);
+        assert_eq!(
+            parse("$f(var)\n").unwrap(),
+            vec![FuncCall(
+                String::from("f"),
+                vec![vec![Literal(String::from("var"))]]
+            )]
+        );
+        assert_eq!(
+            parse("$f(\nvar)").unwrap(),
+            vec![FuncCall(
+                String::from("f"),
+                vec![vec![Literal(String::from("var"))]]
+            )]
+        );
+        assert_eq!(
+            parse("$f(\nvar\r\n)").unwrap(),
+            vec![FuncCall(
+                String::from("f"),
+                vec![vec![Literal(String::from("var"))]]
+            )]
+        );
     }
 
     #[test]
     fn test_function_comment() {
-        assert_eq!(parse("$f(var//\n)").unwrap(), vec![
-            FuncCall(String::from("f"), vec![
-                vec![Literal(String::from("var"))]
-            ])
-        ]);
+        assert_eq!(
+            parse("$f(var//\n)").unwrap(),
+            vec![FuncCall(
+                String::from("f"),
+                vec![vec![Literal(String::from("var"))]]
+            )]
+        );
     }
 
     #[test]
@@ -426,18 +420,22 @@ mod tests {
     #[test]
     fn test_conditional_special() {
         let parsed = parse("[a),(]").unwrap();
-        assert_eq!(parsed, vec![Conditional(vec![Literal(String::from("a),("))])]);
+        assert_eq!(
+            parsed,
+            vec![Conditional(vec![Literal(String::from("a),("))])]
+        );
     }
 
     #[test]
     fn test_function_special() {
         let parsed = parse("$a(b(])").unwrap();
-        assert_eq!(parsed, vec![FuncCall(
-            String::from("a"),
-            vec![
-                vec![Literal(String::from("b(]"))]
-            ]
-        )]);
+        assert_eq!(
+            parsed,
+            vec![FuncCall(
+                String::from("a"),
+                vec![vec![Literal(String::from("b(]"))]]
+            )]
+        );
     }
 
     #[test]
@@ -455,48 +453,48 @@ mod tests {
     #[test]
     fn test_conditional_variable_literal() {
         let parsed = parse("[%a%b]").unwrap();
-        assert_eq!(parsed, vec![Conditional(vec![
-            Variable(String::from("a")),
-            Literal(String::from("b")),
-        ])]);
+        assert_eq!(
+            parsed,
+            vec![Conditional(vec![
+                Variable(String::from("a")),
+                Literal(String::from("b")),
+            ])]
+        );
     }
 
     #[test]
     fn test_conditional_function() {
         let parsed = parse("[$a(b)]").unwrap();
-        assert_eq!(parsed, vec![Conditional(vec![FuncCall(
-            String::from("a"),
-            vec![
-                vec![Literal(String::from("b"))]
-            ]
-        )])]);
+        assert_eq!(
+            parsed,
+            vec![Conditional(vec![FuncCall(
+                String::from("a"),
+                vec![vec![Literal(String::from("b"))]]
+            )])]
+        );
     }
 
     #[test]
     fn test_conditional_conditional() {
         let parsed = parse("[[%a%]]").unwrap();
-        assert_eq!(parsed, vec![
-            Conditional(vec![
-                Conditional(vec![
-                    Variable(String::from("a"))
-                ])
-            ])
-        ]);
+        assert_eq!(
+            parsed,
+            vec![Conditional(vec![Conditional(vec![Variable(
+                String::from("a")
+            )])])]
+        );
     }
 
     #[test]
     fn test_func_conditional() {
         let parsed = parse("$a([%b%])").unwrap();
-        assert_eq!(parsed, vec![
-            FuncCall(
+        assert_eq!(
+            parsed,
+            vec![FuncCall(
                 String::from("a"),
-                vec![
-                    vec![Conditional(vec![
-                        Variable(String::from("b"))
-                    ])]
-                ]
-            )
-        ]);
+                vec![vec![Conditional(vec![Variable(String::from("b"))])]]
+            )]
+        );
     }
 
     /* FIXME:

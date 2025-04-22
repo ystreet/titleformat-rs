@@ -33,9 +33,9 @@ impl fmt::Display for Error {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
-  Literal(String),
-  Variable(String),                     /* %variable% */
-  Conditional(Vec<Expr>),               /* [expression] */
-  FuncCall(String, Vec<Vec<Expr>>),     /* $func(args) */
-  ExprValue(Value),                     /* program internal value for resolved expressions */
+    Literal(String),
+    Variable(String),                 /* %variable% */
+    Conditional(Vec<Expr>),           /* [expression] */
+    FuncCall(String, Vec<Vec<Expr>>), /* $func(args) */
+    ExprValue(Value),                 /* program internal value for resolved expressions */
 }
