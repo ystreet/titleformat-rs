@@ -3,10 +3,10 @@ use std::str;
 use nom::types::CompleteStr;
 use nom::ErrorKind;
 
-use types::Expr;
-use types::Expr::*;
-use types::Error;
-use types::Error::*;
+use crate::types::Expr;
+use crate::types::Expr::*;
+use crate::types::Error;
+use crate::types::Error::*;
 
 /* based on https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Title_Formatting_Reference */
 

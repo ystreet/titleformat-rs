@@ -1,7 +1,7 @@
-use functions::num::to_int;
+use crate::functions::num::to_int;
 
-use types::Error;
-use types::Error::*;
+use crate::types::Error;
+use crate::types::Error::*;
 
 /* $add(a,b, ...)
  * Adds a and b and c and ...

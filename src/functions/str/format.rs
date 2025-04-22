@@ -1,8 +1,8 @@
-use types::Error;
-use types::Error::*;
-use environment::Value;
-use environment::value_string;
-use functions::num::to_int;
+use crate::types::Error;
+use crate::types::Error::*;
+use crate::environment::Value;
+use crate::environment::value_string;
+use crate::functions::num::to_int;
 
 pub fn num(args : Vec<Value>) -> Result<Value, Error> {
     if args.len() != 2 {

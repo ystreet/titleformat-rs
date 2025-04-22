@@ -1,6 +1,6 @@
-use types::Error;
-use types::Error::*;
-use environment::Value;
+use crate::types::Error;
+use crate::types::Error::*;
+use crate::environment::Value;
 
 /*
  * $if2(expr,else)
@@ -24,7 +24,7 @@ pub fn if2 (args : Vec<Value>) -> Result<Value, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use environment::value_string;
+    use crate::environment::value_string;
 
     #[test]
     fn wrong_n_arguments() {

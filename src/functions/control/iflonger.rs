@@ -1,7 +1,7 @@
-use types::Error;
-use types::Error::*;
-use environment::Value;
-use functions::num::to_int;
+use crate::types::Error;
+use crate::types::Error::*;
+use crate::environment::Value;
+use crate::functions::num::to_int;
 
 /*
  * $iflonger(str,n,then,else)
@@ -24,7 +24,7 @@ pub fn iflonger (args : Vec<Value>) -> Result<Value, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use environment::value_string;
+    use crate::environment::value_string;
 
     #[test]
     fn wrong_n_arguments() {

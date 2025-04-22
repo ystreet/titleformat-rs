@@ -1,7 +1,7 @@
 use std::fmt;
 use std::result;
 
-use environment::Value;
+use crate::environment::Value;
 
 pub type Result = result::Result<Expr, Error>;
 
@@ -12,7 +12,7 @@ pub enum Error {
     ParseError,
 }
 
-use types::Error::*;
+use crate::types::Error::*;
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

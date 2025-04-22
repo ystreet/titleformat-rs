@@ -1,10 +1,10 @@
-use functions::num::to_int;
+use crate::functions::num::to_int;
 
-use types::Error;
-use types::Error::*;
-use environment::Value;
-use environment::value_string;
-use functions::control::or::or;
+use crate::types::Error;
+use crate::types::Error::*;
+use crate::environment::Value;
+use crate::environment::value_string;
+use crate::functions::control::or::or;
 
 /* $eq(a,b)
  * Return True if a > b

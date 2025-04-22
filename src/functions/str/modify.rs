@@ -1,8 +1,8 @@
-use types::Error;
-use types::Error::*;
-use environment::Value;
-use environment::value_string;
-use functions::num::to_int;
+use crate::types::Error;
+use crate::types::Error::*;
+use crate::environment::Value;
+use crate::environment::value_string;
+use crate::functions::num::to_int;
 
 fn split_first(s : String, args : Vec<String>) -> Option<(String, String)> {
     for pre in args {

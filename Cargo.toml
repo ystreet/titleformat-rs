@@ -14,17 +14,12 @@ A foobar2000 titleformat parser for rust
 exclude = [
     ".travis.yml"
 ]
+edition = "2021"
 
-[dependencies.nom]
-version = "4.1"
-#features = ["verbose-errors"]
-
-[dependencies.unicode-segmentation]
-version = "1.1.0"
-
-[dependencies.iso_8601]
-version = "0.4"
-package = "iso-8601"
+[dependencies]
+nom = "4.1"
+unicode-segmentation = "1.1.0"
+iso-8601 = "0.4"
 
 [badges]
 travis-ci = { repository = "ystreet/titleformat-rs" }
