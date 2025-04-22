@@ -11,9 +11,6 @@ categories = ["parser-implementations", "text-processing", "multimedia"]
 description = """
 A foobar2000 titleformat parser for rust
 """
-exclude = [
-    ".travis.yml"
-]
 edition = "2021"
 
 [dependencies]
@@ -22,5 +19,4 @@ unicode-segmentation = "1.1.0"
 iso-8601 = "0.4"
 
 [badges]
-travis-ci = { repository = "ystreet/titleformat-rs" }
 codecov = { repository = "ystreet/titleformat-rs", service = "github" }
