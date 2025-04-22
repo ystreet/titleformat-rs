@@ -2,7 +2,6 @@ use functions::num::to_int;
 
 use types::Error;
 use types::Error::*;
-use std;
 
 /* $max(a,b, ...)
  * find the maximum of a, b, c, ...
@@ -11,7 +10,7 @@ pub fn max(args : Vec<String>) -> Result<String, Error> {
     if args.len() < 2 {
         return Err(InvalidNativeFunctionArgs(String::from("max"), args.len()));
     }
-    Ok(args.iter().fold(std::i64::MIN, |cur, x| {
+    Ok(args.iter().fold(i64::MIN, |cur, x| {
         let i = to_int(x);
         if i > cur { i } else { cur }
     }).to_string())

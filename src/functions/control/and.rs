@@ -12,7 +12,7 @@ pub fn and(args : Vec<Value>) -> Result<Value, Error> {
     if args.len() < 2 {
         return Err(InvalidNativeFunctionArgs(String::from("and"), args.len()));
     }
-    Ok(value_string ("", args.iter().fold(true, |cur, x| { cur && x.cond })))
+    Ok(value_string ("", args.iter().all(|x| x.cond)))
 }
 
 #[cfg(test)]

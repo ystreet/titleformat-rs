@@ -12,7 +12,7 @@ pub fn or(args : Vec<Value>) -> Result<Value, Error> {
     if args.len() < 2 {
         return Err(InvalidNativeFunctionArgs(String::from("or"), args.len()));
     }
-    Ok(value_string ("", args.iter().fold(false, |cur, x| { cur || x.cond })))
+    Ok(value_string ("", args.iter().any(|x| x.cond)))
 }
 
 #[cfg(test)]
