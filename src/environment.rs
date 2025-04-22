@@ -35,7 +35,7 @@ pub struct Environment {
 }
 
 impl Environment {
-  fn add_default_functions (&mut self) -> () {
+  fn add_default_functions (&mut self) {
     self.funcs.insert(String::from("add"), FuncValue::NativeFnError(functions::num::add::add));
     self.funcs.insert(String::from("sub"), FuncValue::NativeFnError(functions::num::sub::sub));
     self.funcs.insert(String::from("mul"), FuncValue::NativeFnError(functions::num::mul::mul));
@@ -201,7 +201,7 @@ impl Environment {
           } else if i > 0 {
             s.push_str(sep);
           }
-          s.push_str (&val);
+          s.push_str(val);
         }
         value_string (&s, true)
       },
@@ -261,9 +261,7 @@ impl Environment {
   fn meta_test_value (&self, args : Vec<Value>) -> Result<Value, Error> {
     match args.len() {
       0 => Err(InvalidNativeFunctionArgs(String::from("meta_num"), args.len())),
-      _ => Ok(value_string("", args.iter().fold(true, |c, i| {
-        c && self.meta_num(&i.val) > 0
-      }))),
+      _ => Ok(value_string("", args.iter().all(|i| self.meta_num(&i.val) > 0))),
     }
   }
 
@@ -287,7 +285,7 @@ impl Environment {
       Some(func_val) => match func_val {
         FuncValue::NativeFn(func) => {
             /* return true only if all inputs are true */
-            let c = args.iter().fold(true, |c, val| { c && val.cond });
+            let c = args.iter().all(|val| { val.cond });
             Ok(Value {
                 val : func(args.iter().map(|a| { a.val.clone() }).collect()),
                 cond : c
@@ -295,7 +293,7 @@ impl Environment {
         },
         FuncValue::NativeFnError(func) => {
             /* return true only if all inputs are true */
-            let c = args.iter().fold(true, |c, val| { c && val.cond });
+            let c = args.iter().all(|val| { val.cond });
             Ok(Value {
                 val : func(args.iter().map(|a| { a.val.clone() }).collect())?,
                 cond : c

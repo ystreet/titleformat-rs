@@ -19,7 +19,7 @@ pub mod control;
  */
 pub fn to_int(s: &str) -> i64 {
     let mut s = String::from(s);
-    s = s.trim_left().to_string();
+    s = s.trim_start().to_string();
     let negative = if s.starts_with("-") { s = s.split_off(1); -1 } else { 1 };
     let mut num_str = String::from("");
     for i in s.chars() {
@@ -29,7 +29,7 @@ pub fn to_int(s: &str) -> i64 {
         }
     };
     let mut num = 0;
-    if num_str.len() != 0 {
+    if !num_str.is_empty() {
         num = num_str.parse::<i64>().unwrap();
     }
     num * negative

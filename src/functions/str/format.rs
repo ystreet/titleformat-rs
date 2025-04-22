@@ -18,10 +18,10 @@ pub fn num(args : Vec<Value>) -> Result<Value, Error> {
         let pos = if val < 0 { -val } else { val };
         let val_s = pos.to_string();
         if val < 0 {
-            s.push_str("-");
+            s.push('-');
         }
         while val_s.len() + s.len() < len as usize {
-            s.push_str("0");
+            s.push('0');
         }
         s.push_str(&val_s);
     }

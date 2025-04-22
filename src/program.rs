@@ -5,12 +5,12 @@ use parser;
 use environment::{Environment, Value, value_string};
 use std::collections::HashMap;
 
+#[derive(Debug, Default)]
 pub struct Program {
   instr : Vec<Expr>,
 }
 
 impl Program {
-
   /// Constructs a new Program
   ///
   /// # Examples
@@ -19,10 +19,9 @@ impl Program {
   /// let program = Program::new();
   /// ```
   pub fn new() -> Self {
-    let prog = Program {
+    Program {
       instr : vec![],
-    };
-    prog
+    }
   }
 
   /// Parses a program string
@@ -78,7 +77,7 @@ impl Program {
     let mut new_arg = value_string("", false);
 
     for arg in args {
-      let tmp = self.eval (env, &arg)?;
+      let tmp = self.eval (env, arg)?;
       new_arg.val = new_arg.val + &tmp.val;
       /* picard does an or here */
       new_arg.cond = new_arg.cond || tmp.cond;
@@ -91,8 +90,8 @@ impl Program {
     match expr {
       ExprValue(v) => Ok(v.clone()),
       /* literals are always true for conditionals */
-      Literal(v) => Ok(value_string(&v, true)),
-      Variable(var) => Ok(env.get_variable(&var)),
+      Literal(v) => Ok(value_string(v, true)),
+      Variable(var) => Ok(env.get_variable(var)),
       Conditional(args) => {
           let arg = self.resolve_arg_vec (env, args)?;
           match self.eval(env, &arg)? {
@@ -104,10 +103,10 @@ impl Program {
         let mut evaluated_args = Vec::new();
         for unresolved in args {
           let resolved = self.resolve_arg_vec (env, unresolved)?;
-          let mut new_arg = self.eval(env, &resolved)?;
+          let new_arg = self.eval(env, &resolved)?;
           evaluated_args.push(new_arg);
         };
-        Ok(env.call(&name, evaluated_args)?)
+        Ok(env.call(name, evaluated_args)?)
       },
     }
   }

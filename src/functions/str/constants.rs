@@ -23,7 +23,7 @@ pub fn tab(args : Vec<Value>) -> Result<Value, Error> {
         1 => Ok(Value {
             val : (0..to_int(&args[0].val))
                 .fold(String::from(""), |mut acc, _i| {
-                    acc.push_str("\t");
+                    acc.push('\t');
                     acc
                 }),
             cond : true}),

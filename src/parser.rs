@@ -116,10 +116,7 @@ named!(conditional<CompleteStr, Expr>,
  */
 fn is_special(c : char) -> bool {
   /* anything that may not be a literal */
-  match c {
-    '%' | '$' | ',' | '[' | ']' | '<' | '>' | '\'' | '(' | ')' | '/' | '\r' | '\n'  => true,
-    _ => false
-  }
+  matches!(c, '%' | '$' | ',' | '[' | ']' | '<' | '>' | '\'' | '(' | ')' | '/' | '\r' | '\n')
 }
 
 named!(unescaped_literal<CompleteStr, String>,

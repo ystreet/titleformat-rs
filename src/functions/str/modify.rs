@@ -15,17 +15,17 @@ fn split_first(s : String, args : Vec<String>) -> Option<(String, String)> {
 }
 
 pub fn stripprefix(args : Vec<Value>) -> Result<Value, Error> {
-    if args.len() == 0 {
+    if args.is_empty() {
         return Err(InvalidNativeFunctionArgs(String::from("stripprefix"), args.len()))
     }
-    let mut s = String::from(args[0].val.clone());
+    let mut s = args[0].val.clone();
     if args.len() == 1 {
         match split_first (s.clone(), vec![String::from("A "), String::from("The ")]) {
             None => {},
             Some((_, new)) => s = new,
         }
     }
-    match split_first (s.clone(), (&args[1..]).iter().map(|ref val| {
+    match split_first (s.clone(), (args[1..]).iter().map(|val| {
                 val.val.clone()
             }).collect()) {
         None => {},
@@ -35,21 +35,21 @@ pub fn stripprefix(args : Vec<Value>) -> Result<Value, Error> {
 }
 
 pub fn swapprefix(args : Vec<Value>) -> Result<Value, Error> {
-    if args.len() == 0 {
+    if args.is_empty() {
         return Err(InvalidNativeFunctionArgs(String::from("swapprefix"), args.len()))
     }
-    let mut s = String::from(args[0].val.clone());
+    let mut s = args[0].val.clone();
     if args.len() == 1 {
         match split_first (s.clone(), vec![String::from("A "), String::from("The ")]) {
             None => {},
-            Some((s1, s2)) => s = s2 + ", " + &s1.trim_right(),
+            Some((s1, s2)) => s = s2 + ", " + s1.trim_end(),
         }
     }
-    match split_first (s.clone(), (&args[1..]).iter().map(|ref val| {
+    match split_first (s.clone(), (args[1..]).iter().map(|val| {
                 val.val.clone()
             }).collect()) {
         None => {},
-        Some((s1, s2)) => s = s2 + ", " + &s1.trim_right(),
+        Some((s1, s2)) => s = s2 + ", " + s1.trim_end(),
     }
     Ok(value_string (s.as_str(), args[0].cond))
 }
