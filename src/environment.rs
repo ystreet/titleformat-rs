@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use types::Error;
-use types::Error::*;
+use crate::types::Error;
+use crate::types::Error::*;
 use std::cell::RefCell;
 
-use functions;
-use functions::num::to_int;
+use crate::functions;
+use crate::functions::num::to_int;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Value {

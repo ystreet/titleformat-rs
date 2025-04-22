@@ -1,8 +1,8 @@
-use types::Error;
-use types::Expr;
-use types::Expr::*;
-use parser;
-use environment::{Environment, Value, value_string};
+use crate::types::Error;
+use crate::types::Expr;
+use crate::types::Expr::*;
+use crate::parser;
+use crate::environment::{Environment, Value, value_string};
 use std::collections::HashMap;
 
 #[derive(Debug, Default)]
