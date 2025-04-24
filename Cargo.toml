@@ -14,7 +14,7 @@ A foobar2000 titleformat parser for rust
 edition = "2021"
 
 [dependencies]
-nom = "4.1"
+nom = "8"
 unicode-segmentation = "1.1.0"
 iso-8601 = "0.4"
 
