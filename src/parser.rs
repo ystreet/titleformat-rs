@@ -1,7 +1,10 @@
-use std::str;
-
-use nom::types::CompleteStr;
-use nom::ErrorKind;
+use nom::branch::alt;
+use nom::bytes::complete::{tag, take_till, take_till1, take_until};
+use nom::character::complete::newline;
+use nom::combinator::{all_consuming, map, opt};
+use nom::multi::{fold_many0, fold_many1, many0, separated_list0};
+use nom::sequence::{delimited, preceded};
+use nom::{IResult, Input, Parser};
 
 use crate::types::Error;
 use crate::types::Error::*;
@@ -13,43 +16,28 @@ use crate::types::Expr::*;
 /* comment
  *
  * A comment is a line starting with two slashes, e.g. // this is a comment. */
-named!(comment<CompleteStr, String>,
-    do_parse!(
-        alt!(
-            delimited!(tag!("//"), take_until!("\n"), tag!("\n"))
-          | delimited!(tag!("//"), take_until!("\r\n"), tag!("\r\n"))
-          | preceded!(tag!("//"), take_till!(|_| { false }))
-        ) >>
-        (String::from(""))
-    )
-);
+fn comment(input: &str) -> IResult<&str, &str> {
+    alt((
+        delimited(tag("//"), take_until("\n"), tag("\n")),
+        delimited(tag("//"), take_until("\r\n"), tag("\r\n")),
+        preceded(tag("//"), take_till(|_| false)),
+    ))
+    .parse(input)
+}
 
-named!(newlines<CompleteStr, String>,
-    do_parse!(
-        alt!(
-            map!(tag!("\n"),    |_| String::from(""))
-          | map!(tag!("\r\n"),  |_| String::from(""))
-        ) >>
-        (String::from(""))
-    )
-);
+fn newlines(input: &str) -> IResult<&str, &str> {
+    alt((map(tag("\n"), |_| ""), map(tag("\r\n"), |_| ""))).parse(input)
+}
 
 /* %varname%
  *
  * A field reference is a field name enclosed in percent signs, for example %artist%.
  */
-named!(variable<CompleteStr, Expr>,
-    delimited!(
-        tag!("%"),
-        return_error!(ErrorKind::Custom(1),
-            do_parse!(
-                var_name : take_until1!("%") >>
-                (parse_varname(&var_name))
-            )
-        ),
-        tag!("%")
-    )
-);
+fn variable(input: &str) -> IResult<&str, Expr> {
+    delimited(tag("%"), take_until("%"), tag("%"))
+        .parse(input)
+        .map(|(input, var)| (input, parse_varname(var)))
+}
 
 /* $funcname(arg1,arg2)
  *
@@ -61,28 +49,55 @@ named!(variable<CompleteStr, Expr>,
  * dollar sign and the function name, or the function name and the opening
  * parenthesis of the parameter list.
  */
-named!(func<CompleteStr, Expr>,
-    preceded!(tag!("$"),
-        return_error!(ErrorKind::Custom(2),
-            do_parse!(
-                func_name: take_until1!("(") >>
-                many0!(newlines) >>
-                args : func_args >>
-                many0!(newlines) >>
-                (parse_funccall(&func_name, args))
-            )
-        )
-    )
-);
+fn func2(input: &str) -> IResult<&str, Expr> {
+    let (input, func_name) = take_until("(")(input)?;
+    let (input, _) = many0(newline).parse(input)?;
+    let (input, args) = func_args(input)?;
+    let (input, _) = many0(newline).parse(input)?;
+    Ok((input, parse_funccall(func_name, args)))
+}
 
-named!(func_args<CompleteStr, Option<Vec<Vec<Expr>>>>,
-    do_parse!(
-        tag!("(") >>
-        args : opt!(separated_list!(tag!(","), function_expr)) >>
-        tag!(")") >>
-        (args)
+fn func(input: &str) -> IResult<&str, Expr> {
+    preceded(tag("$"), func2).parse(input)
+}
+
+fn find_func_arg_end(input: &str) -> IResult<&str, &str> {
+    let mut stack = 1;
+    for (index, c) in input.iter_indices() {
+        match c {
+            '$' => stack += 1,
+            ')' => {
+                stack -= 1;
+                if stack == 0 {
+                    return Ok((input.take_from(index), input.take(index)));
+                }
+            }
+            ',' => {
+                if stack == 1 {
+                    return Ok((input.take_from(index), input.take(index)));
+                }
+            }
+            _ => (),
+        }
+    }
+    Err(nom::Err::Failure(nom::error::Error::new(
+        input,
+        nom::error::ErrorKind::SeparatedList,
+    )))
+}
+fn func_args(input: &str) -> IResult<&str, Vec<Vec<Expr>>> {
+    let (input, args) = delimited(
+        tag("("),
+        separated_list0(tag(","), find_func_arg_end),
+        tag(")"),
     )
-);
+    .parse(input)?;
+    let mut ret = vec![];
+    for expr in args {
+        ret.push(function_expr(expr)?.1);
+    }
+    Ok((input, ret))
+}
 
 /* Evaluates the expression between [ and ]. If it has the truth value true,
 * its string value and the truth value true are returned. Otherwise an empty
@@ -91,18 +106,37 @@ named!(func_args<CompleteStr, Option<Vec<Vec<Expr>>>>,
 * Example: [%artist%] returns the value of the artist tag, if it exists.
 * Otherwise it returns nothing, when artist would return "?".
 */
-named!(conditional<CompleteStr, Expr>,
-    delimited!(
-        tag!("["),
-        return_error!(ErrorKind::Custom(3),
-            do_parse!(
-                expr : conditional_expr >>
-                (parse_conditional(expr))
-            )
-        ),
-        tag!("]")
-    )
-);
+fn find_conditional_end(input: &str) -> IResult<&str, &str> {
+    let mut stack = 1;
+    for (index, c) in input.iter_indices() {
+        match c {
+            '[' => stack += 1,
+            ']' => {
+                stack -= 1;
+                if stack == 0 {
+                    return Ok((input.take_from(index), input.take(index)));
+                }
+            }
+            _ => (),
+        }
+    }
+    Err(nom::Err::Failure(nom::error::Error::new(
+        input,
+        nom::error::ErrorKind::SeparatedList,
+    )))
+}
+fn conditional(input: &str) -> IResult<&str, Expr> {
+    let (del_input, cond_expr) =
+        delimited(tag("["), find_conditional_end, tag("]")).parse(input)?;
+    let (cond_input, expr) = conditional_expr(cond_expr).map(|(_, expr)| (del_input, expr))?;
+    if !cond_input.is_empty() {
+        return Err(nom::Err::Error(nom::error::Error {
+            input,
+            code: nom::error::ErrorKind::Eof,
+        }));
+    }
+    Ok((del_input, expr))
+}
 
 /* text literal
  *
@@ -121,137 +155,147 @@ fn is_special(c: char) -> bool {
     )
 }
 
-named!(unescaped_literal<CompleteStr, String>,
-    map!(take_till1!(is_special), |a| String::from(&a as &str))
-);
+fn unescaped_literal(input: &str) -> IResult<&str, &str> {
+    take_till1(is_special).parse(input)
+}
 
-named!(escaped_literal<CompleteStr, String>,
-    do_parse!(
-        tag!("\'") >>
-        ret : take_until1!("\'") >>
-        tag!("\'") >>
-        (String::from(&ret as &str))
-    )
-);
+fn escaped_literal(input: &str) -> IResult<&str, &str> {
+    delimited(tag("\'"), take_until("\'"), tag("\'")).parse(input)
+}
 
 /* literal that can be detected anywhere */
-named!(base_literal<CompleteStr, String>,
-    do_parse!(
-        opt!(comment) >>
-        ret : alt!(
-            unescaped_literal
-          | escaped_literal
-          | newlines
-            /* [, ], <, > currently unused */
-          | map!(tag!("<"),     |_| String::from("<"))
-          | map!(tag!(">"),     |_| String::from(">"))
-          | map!(tag!("\'\'"),  |_| String::from("\'"))
-          | map!(tag!("/"),     |_| String::from("/"))
-        ) >>
-        opt!(comment) >>
-        (ret)
-    )
-);
+fn base_literal(input: &str) -> IResult<&str, &str> {
+    let (input, _comment_val) = opt(comment).parse(input)?;
+    if input.is_empty() {
+        //&& comment.is_some() {
+        //return Ok((input, ""));
+        return Err(nom::Err::Error(nom::error::Error::new(
+            input,
+            nom::error::ErrorKind::Complete,
+        )));
+    }
+    let (input, literal) = alt((
+        map(tag("\'\'"), |_| "\'"),
+        unescaped_literal,
+        escaped_literal,
+        newlines,
+        tag("<"),
+        tag(">"),
+        tag("/"),
+    ))
+    .parse(input)?;
+    let (input, _comment_val) = opt(comment).parse(input)?;
+    Ok((input, literal))
+}
 
-named!(function_literal<CompleteStr, String>,
-    alt!(
-        base_literal
-      | map!(tag!("("),  |_| String::from("("))
-      | map!(tag!("]"),  |_| String::from("]"))
-    )
-);
-named!(function_literal_expr<CompleteStr, Expr>,
-    do_parse!(
-        lit : fold_many1!(function_literal,
-            String::new(), |mut acc : String, item : String| {
-                acc.push_str(&item);
-                acc
-            }) >>
-        (parse_literal(&lit))
-    )
-);
-named!(function_expr<CompleteStr, Vec<Expr>>,
-    many0!(alt!(conditional | func | variable | function_literal_expr))
-);
+fn function_literal(input: &str) -> IResult<&str, &str> {
+    alt((tag("("), tag("]"), base_literal)).parse(input)
+}
 
-named!(conditional_literal<CompleteStr, String>,
-    alt!(
-        base_literal
-      | map!(tag!("("),  |_| String::from("("))
-      | map!(tag!(")"),  |_| String::from(")"))
-      | map!(tag!(","),  |_| String::from(","))
+fn function_literal_expr(input: &str) -> IResult<&str, Expr> {
+    fold_many1(
+        function_literal,
+        String::new,
+        |mut acc: String, item: &str| {
+            acc.push_str(item);
+            acc
+        },
     )
-);
-named!(conditional_literal_expr<CompleteStr, Expr>,
-    do_parse!(
-        lit : fold_many1!(conditional_literal,
-            String::new(), |mut acc : String, item : String| {
-                acc.push_str(&item);
-                acc
-            }) >>
-        (parse_literal(&lit))
+    .map(|lit| parse_literal(&lit))
+    .parse(input)
+}
+fn function_expr(input: &str) -> IResult<&str, Vec<Expr>> {
+    all_consuming(many0(alt((
+        conditional,
+        func,
+        variable,
+        function_literal_expr,
+    ))))
+    .parse(input)
+}
+
+fn conditional_literal(input: &str) -> IResult<&str, &str> {
+    alt((tag(")"), tag("("), tag(","), base_literal)).parse(input)
+}
+
+fn conditional_literal_expr(input: &str) -> IResult<&str, Expr> {
+    fold_many1(
+        conditional_literal,
+        String::new,
+        |mut acc: String, item: &str| {
+            acc.push_str(item);
+            acc
+        },
     )
-);
-named!(conditional_expr<CompleteStr, Vec<Expr>>, many0!(alt!(conditional | func | variable | conditional_literal_expr)));
+    .map(|lit| parse_literal(&lit))
+    .parse(input)
+}
+fn conditional_expr(input: &str) -> IResult<&str, Expr> {
+    all_consuming(many0(alt((
+        conditional,
+        func,
+        variable,
+        conditional_literal_expr,
+    ))))
+    .parse(input)
+    .map(|(input, conditional)| (input, parse_conditional(conditional)))
+}
 
 /* literals outside functions, variables and conditionas */
-named!(standard_literal<CompleteStr, String>,
-    alt!(
-        base_literal
-      | map!(tag!("("),  |_| String::from("("))
-      | map!(tag!(")"),  |_| String::from(")"))
-      | map!(tag!("]"),  |_| String::from("]"))
-      | map!(tag!(","),  |_| String::from(","))
+fn standard_literal(input: &str) -> IResult<&str, &str> {
+    alt((tag("("), tag(")"), tag("]"), tag(","), base_literal)).parse(input)
+}
+fn standard_literal_expr(input: &str) -> IResult<&str, Expr> {
+    if input.is_empty() {
+        return Err(nom::Err::Error(nom::error::Error::new(
+            input,
+            nom::error::ErrorKind::Complete,
+        )));
+    }
+    fold_many1(
+        standard_literal,
+        String::new,
+        |mut acc: String, item: &str| {
+            acc.push_str(item);
+            acc
+        },
     )
-);
-named!(standard_literal_expr<CompleteStr, Expr>,
-    do_parse!(
-        lit : fold_many1!(standard_literal,
-            String::new(), |mut acc : String, item : String| {
-                acc.push_str(&item);
-                acc
-            }) >>
-        (parse_literal(&lit))
-    )
-);
+    .map(|lit| parse_literal(&lit))
+    .parse(input)
+}
 
-named!(nested_expr<CompleteStr, Expr>, alt!(conditional | func | variable | standard_literal_expr));
-named!(expr<CompleteStr, Vec<Expr>>, many0!(nested_expr));
+fn nested_expr(input: &str) -> IResult<&str, Expr> {
+    alt((conditional, func, variable, standard_literal_expr)).parse(input)
+}
+fn expr(input: &str) -> IResult<&str, Vec<Expr>> {
+    fold_many0(nested_expr, Vec::new, move |mut acc, item| {
+        acc.push(item);
+        acc
+    })
+    .parse(input)
+}
 
 pub fn parse(input: &str) -> Result<Vec<Expr>, Error> {
-    match expr(CompleteStr(input)) {
-        Ok((_, expr)) => {
-            println!("{:?}", expr);
-            Ok(expr)
-        }
-        e => {
-            println!("{:?}", e);
-            Err(ParseError)
-        }
+    match expr(input) {
+        Ok((_, expr)) => Ok(expr),
+        _e => Err(ParseError),
     }
 }
 
 fn parse_conditional(conditional: Vec<Expr>) -> Expr {
-    println!("got conditional {:?}", conditional);
     Conditional(conditional)
 }
 
 fn parse_literal(literal: &str) -> Expr {
-    println!("got literal {}", literal);
     Literal(String::from(literal))
 }
 
 fn parse_varname(name: &str) -> Expr {
-    println!("got variable {}", name);
     Variable(String::from(name))
 }
 
-fn parse_funccall(name: &str, args: Option<Vec<Vec<Expr>>>) -> Expr {
-    println!("got function {}", name);
-    match args {
-        Some(v) => FuncCall(String::from(name), v),
-        None => FuncCall(String::from(name), vec![vec![]]),
-    }
+fn parse_funccall(name: &str, args: Vec<Vec<Expr>>) -> Expr {
+    FuncCall(String::from(name), args)
 }
 
 #[cfg(test)]
