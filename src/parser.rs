@@ -424,6 +424,11 @@ mod tests {
     }
 
     #[test]
+    fn test_unclosed_function() {
+        assert_eq!(parse("$f(var"), Err(ParseError),);
+    }
+
+    #[test]
     fn test_empty_comment() {
         assert_eq!(parse("//\n").unwrap(), vec![]);
     }
