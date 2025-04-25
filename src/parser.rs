@@ -541,17 +541,12 @@ mod tests {
         );
     }
 
-    /* FIXME:
     #[test]
     fn test_func_empty_arg() {
         let parsed = parse(r"$a(,)").unwrap();
-        assert_eq!(parsed, vec![
-            FuncCall(
-                String::from("a"),
-                vec![
-                    vec![Literal(String::from(""))]
-                ]
-            )
-        ]);
-    }*/
+        assert_eq!(
+            parsed,
+            vec![FuncCall(String::from("a"), vec![vec![], vec![],])]
+        );
+    }
 }
