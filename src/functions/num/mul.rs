@@ -10,7 +10,11 @@ pub fn mul(args: Vec<String>) -> Result<String, Error> {
     if args.len() < 2 {
         return Err(InvalidNativeFunctionArgs(String::from("mul"), args.len()));
     }
-    Ok(args.iter().fold(1, |cur, x| cur * to_int(x)).to_string())
+    args.iter()
+        .try_fold(1i64, |cur, x| {
+            cur.checked_mul(to_int(x)).ok_or(Error::OutOfRange)
+        })
+        .map(|val| val.to_string())
 }
 
 #[cfg(test)]

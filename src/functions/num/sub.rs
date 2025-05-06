@@ -17,7 +17,9 @@ pub fn sub(args: Vec<String>) -> Result<String, Error> {
             None => unreachable!(),
         }
     };
-    Ok(iter.fold(accum, |cur, x| cur - to_int(x)).to_string())
+    Ok(iter
+        .fold(accum, |cur, x| cur.saturating_sub(to_int(x)))
+        .to_string())
 }
 
 #[cfg(test)]
