@@ -10,6 +10,29 @@ pub fn year(args: Vec<Value>) -> Result<Value, Error> {
     match args.len() {
         1 => {
             let val = &args[0];
+
+            // Try parsing the year ourselves to avoid an overflow when iso_8601 parses the year
+            let idx = val
+                .val
+                .as_bytes()
+                .iter()
+                .fold((true, 0usize), |(accum, idx), &c| {
+                    if !accum {
+                        (accum, idx)
+                    } else if (c as char).is_ascii_digit() {
+                        (true, idx + 1)
+                    } else {
+                        (false, idx)
+                    }
+                })
+                .1;
+            let Ok(num) = i32::from_str(&val.val[..idx]) else {
+                return Ok(value_string("", val.cond));
+            };
+            if num > 9999 {
+                return Ok(value_string("", val.cond));
+            }
+
             let date = match PartialDateTime::from_str(&val.val) {
                 Ok(date) => date,
                 Err(_) => return Ok(value_string("", val.cond)),
