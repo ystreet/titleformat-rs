@@ -20,13 +20,20 @@ pub fn crlf(args: Vec<Value>) -> Result<Value, Error> {
 pub fn tab(args: Vec<Value>) -> Result<Value, Error> {
     match args.len() {
         0 => Ok(value_string("\t", true)),
-        1 => Ok(Value {
-            val: (0..to_int(&args[0].val)).fold(String::from(""), |mut acc, _i| {
-                acc.push('\t');
-                acc
-            }),
-            cond: true,
-        }),
+        1 => {
+            let count = to_int(&args[0].val);
+            if count > 256 {
+                Err(Error::OutOfRange)
+            } else {
+                Ok(Value {
+                    val: (0..count).fold(String::from(""), |mut acc, _i| {
+                        acc.push('\t');
+                        acc
+                    }),
+                    cond: true,
+                })
+            }
+        }
         _ => Err(InvalidNativeFunctionArgs(String::from("tab"), args.len())),
     }
 }

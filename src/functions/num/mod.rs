@@ -33,11 +33,13 @@ pub fn to_int(s: &str) -> i64 {
             _ => break,
         }
     }
-    let mut num = 0;
     if !num_str.is_empty() {
-        num = num_str.parse::<i64>().unwrap();
+        let Ok(num) = num_str.parse::<i64>() else {
+            return 0;
+        };
+        return num * negative;
     }
-    num * negative
+    0
 }
 
 #[cfg(test)]

@@ -9,6 +9,7 @@ pub type Result = result::Result<Expr, Error>;
 pub enum Error {
     InvalidNativeFunctionArgs(String, usize),
     UndefinedFunction(String),
+    OutOfRange,
     ParseError,
 }
 
@@ -27,6 +28,7 @@ impl fmt::Display for Error {
             }
             UndefinedFunction(ref varname) => write!(f, "Undefined Function: {}", varname),
             ParseError => write!(f, "Unable the parse the input. Please recheck."),
+            OutOfRange => write!(f, "Computed value out of range"),
         }
     }
 }

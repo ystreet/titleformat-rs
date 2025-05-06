@@ -10,7 +10,11 @@ pub fn add(args: Vec<String>) -> Result<String, Error> {
     if args.len() < 2 {
         return Err(InvalidNativeFunctionArgs(String::from("add"), args.len()));
     }
-    Ok(args.iter().fold(0, |cur, x| cur + to_int(x)).to_string())
+    args.iter()
+        .try_fold(0i64, |cur, x| {
+            cur.checked_add(to_int(x)).ok_or(Error::OutOfRange)
+        })
+        .map(|val| val.to_string())
 }
 
 #[cfg(test)]
